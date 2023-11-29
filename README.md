@@ -7,7 +7,13 @@ focused on native plants.
 TODO: Describe how both non-technical and technical contributions may be made
 
 ## Design
-TODO: Describe the high level design of the project
+Data is collected using an [ETL](https://en.wikipedia.org/wiki/Extract%2C_transform%2C_load) process driven by [Luigi](https://github.com/spotify/luigi).  Fetched data is cached to limit how often external services need to be hit.
+
+* Extract: Raw data (HTML, JSON, etc) is extracted from datasources like [USDA](https://plants.usda.gov/), [Wildflower](https://www.wildflower.org/plants/), and [ChatGPT](https://chat.openai.com).
+* Transform: The fetched data is parsed and transformed into the fields that will appear in the output.
+* Load: The data is loaded into the generated CSV.
+
+TODO: Write more about datasources / tasks / tables
 
 ### Setup
 ```bash
