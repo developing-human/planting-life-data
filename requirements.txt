@@ -1,0 +1,11 @@
+# helps parse html
+beautifulsoup4==4.12
+
+# schedules & runs tasks
+luigi==3.4
+
+# runs unit tests
+pytest==7.4
+
+# executes http requests
+requests==2.31
