@@ -1,9 +1,9 @@
-**Planting Life Data** collects data about native plants and organizes it to be
-accessible to new or intermediate gardeners.  This is used by
+**Planting Life Data** organizes information about native plants to be
+accessible to gardeners.  This is used by
 [Planting Life](https://planting.life), but may be useful for other projects
 focused on native plants.
 
-The collected data will make it easy to answer questions like:
+The collected data will make it easy to answer questions such as:
 * What plants are native near me?
 * Will it grow in the shade?
 * How tall is it?
@@ -13,7 +13,7 @@ The collected data will make it easy to answer questions like:
 ## Contributing
 If you're considering helping out with this project, thank you!  You're awesome!
 
-The two big ways to help out are:
+Two big ways you can help out are:
 1. Plant enthusiasts: Suggesting new or better places to find information on plants
 2. Programmers: Implementing the fetching/parsing of data for fields or sources which aren't yet supported
 
