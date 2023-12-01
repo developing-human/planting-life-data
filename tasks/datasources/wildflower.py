@@ -14,7 +14,7 @@ class ExtractWildflowerHtml(LenientTask):
         return usda.TransformSymbol(scientific_name=self.scientific_name)
 
     def output(self):
-        return luigi.LocalTarget(f"cache/wildflower/html/{self.scientific_name}.html")
+        return luigi.LocalTarget(f"data/raw/wildflower/{self.scientific_name}.html")
 
     def run_lenient(self):
         symbol = self.input().open().read().strip()
@@ -45,7 +45,7 @@ class TransformMoisture(LenientTask):
 
     def output(self):
         return luigi.LocalTarget(
-            f"cache/wildflower/moisture/{self.scientific_name}.txt"
+            f"data/transformed/wildflower/moisture/{self.scientific_name}.txt"
         )
 
     def run_lenient(self):
@@ -82,7 +82,7 @@ class TransformShade(LenientTask):
         return ExtractWildflowerHtml(scientific_name=self.scientific_name)
 
     def output(self):
-        return luigi.LocalTarget(f"cache/wildflower/shade/{self.scientific_name}.txt")
+        return luigi.LocalTarget(f"data/transformed/wildflower/shade/{self.scientific_name}.txt")
 
     def run_lenient(self):
         with self.input().open("r") as f:

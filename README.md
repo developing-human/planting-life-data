@@ -43,8 +43,8 @@ pip3 install -r requirements.txt
 ## Usage
 ```bash
 # Collect data about the plants in names_short.txt
-python3 generate_plants_table.py names_short.txt
+python3 generate_plants_csv.py data/in/scientific-names/short.txt
 
 # Print the collected data to the terminal
-cat cache/tables/plants-*.csv
+cat data/out/plants-*.csv
 ```

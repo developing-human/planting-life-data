@@ -8,7 +8,7 @@ import logging
 
 class ExtractPlantList(luigi.Task):
     def output(self):
-        return luigi.LocalTarget("cache/usda/plant-complete-list.csv")
+        return luigi.LocalTarget("data/raw/usda/plant-complete-list.csv")
 
     def run(self):
         response = requests.get(
@@ -26,7 +26,7 @@ class TransformPlantList(luigi.Task):
         return ExtractPlantList()
 
     def output(self):
-        return luigi.LocalTarget("cache/usda/plant-complete-list.json")
+        return luigi.LocalTarget("data/transformed/usda/plant-complete-list.json")
 
     def run(self):
         with self.input().open("r") as csv_file:
@@ -82,7 +82,7 @@ class TransformSymbol(luigi.Task):
         return TransformPlantList()
 
     def output(self):
-        return luigi.LocalTarget(f"cache/usda/symbols/{self.scientific_name}.txt")
+        return luigi.LocalTarget(f"data/transformed/usda/symbols/{self.scientific_name}.txt")
 
     def run(self):
         with self.input().open("r") as f:
@@ -116,7 +116,7 @@ class ExtractPlantProfile(luigi.Task):
 
     def output(self):
         return luigi.LocalTarget(
-            f"cache/usda/plant-profiles/{self.scientific_name}.json"
+            f"data/raw/usda/plant-profiles/{self.scientific_name}.json"
         )
 
     def run(self):
@@ -139,7 +139,7 @@ class TransformCommonName(luigi.Task):
         return ExtractPlantProfile(scientific_name=self.scientific_name)
 
     def output(self):
-        return luigi.LocalTarget(f"cache/usda/common-names/{self.scientific_name}.txt")
+        return luigi.LocalTarget(f"data/transformed/usda/common-names/{self.scientific_name}.txt")
 
     def run(self):
         with self.input().open("r") as f:

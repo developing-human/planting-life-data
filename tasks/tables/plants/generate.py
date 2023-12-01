@@ -1,6 +1,5 @@
 import csv
 import luigi
-from datetime import datetime
 import tasks.datasources.usda as usda
 import tasks.datasources.wildflower as wildflower
 
@@ -9,8 +8,11 @@ class GeneratePlantsCsv(luigi.Task):
     plants_filename: str = luigi.Parameter()
 
     def output(self):
-        now = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
-        return luigi.LocalTarget(f"cache/tables/plants-{now}.csv")
+        return luigi.LocalTarget(f"data/out/plants.csv")
+
+    def complete(self):
+        # Always run this Task, even if the output file exists
+        return False
 
     def run(self):
         with open(self.plants_filename) as plant_file:
