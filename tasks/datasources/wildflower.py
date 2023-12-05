@@ -1,7 +1,7 @@
 import luigi
 import requests
 import time
-from tasks.lenient import LenientTask, StrictError
+from tasks.lenient import LenientTask
 from bs4 import BeautifulSoup
 import tasks.datasources.usda as usda
 import json
