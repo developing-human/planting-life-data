@@ -1,6 +1,163 @@
-scientific_name,common_name,moisture,shade
-ilex verticillata,common winterberry,"None,Some,Lots","None,Some,Lots"
-cephalanthus occidentalis,common buttonbush,"Some,Lots","Some,Lots"
-abelia grandiflora,glossy abelia,,
-asclepias syriaca,common milkweed,Some,None
-lobelia cardinalis,cardinalflower,"Some,Lots","None,Some,Lots"
+scientific_name,common_name,full_shade,part_shade,full_sun,low_moisture,medium_moisture,high_moisture
+Achillea millefolium,Common Yarrow,no,yes,yes,yes,no,no
+Actaea pachypoda,White Baneberry,yes,yes,no,no,yes,yes
+Amorpha fruticosa,False Indigo Bush,no,yes,yes,no,yes,no
+Amsonia tabernaemontana,Eastern Bluestar,no,yes,no,no,no,yes
+Andropogon gerardii,Big Bluestem,no,yes,yes,no,yes,no
+Aquilegia canadensis,Red Columbine,yes,yes,no,yes,yes,no
+Arisaema triphyllum,Jack in the Pulpit,yes,no,yes,no,yes,yes
+Aronia melanocarpa,Black Chokeberry,no,yes,no,no,yes,no
+Aruncus dioicus,Bride's Feathers,yes,yes,yes,no,yes,yes
+Asarum canadense,Canadian Wildginger,yes,yes,no,no,yes,no
+Asclepias incarnata,Swamp Milkweed,no,yes,yes,no,yes,yes
+Asclepias syriaca,Common Milkweed,no,no,yes,no,yes,no
+Asclepias tuberosa,Butterfly Milkweed,no,no,yes,yes,yes,no
+Asclepias verticillata,Whorled Milkweed,no,yes,yes,yes,no,no
+Aster divaricatus,White Wood Aster,yes,yes,no,yes,no,no
+Aster laevis,Smooth Blue Aster,no,no,yes,yes,no,no
+Aster novae,New England Aster,no,yes,no,no,yes,no
+Athyrium filix,Common Ladyfern,yes,yes,no,no,yes,yes
+Baptisia alba,White Wild Indigo,no,no,yes,yes,yes,no
+Baptisia australis,Blue Wild Indigo,no,no,yes,no,yes,no
+Baptisia tinctoria,Horseflyweed,no,no,yes,yes,no,no
+Bouteloua curtipendula,Sideoats Grama,no,yes,yes,yes,yes,no
+Caltha palustris,Yellow Marsh Marigold,yes,yes,no,no,yes,yes
+Campanula americana,American Bellflower,no,yes,no,no,yes,no
+Carex amphibola,Eastern Narrowleaf Sedge,yes,yes,no,no,yes,yes
+Carex appalachica,Appalachian Sedge,yes,yes,no,,,
+Carex crinita,Fringed Sedge,yes,yes,no,no,yes,yes
+Carex grayi,Gray's Sedge,no,yes,no,,,
+Carex pensylvanica,Pennsylvania Sedge,yes,yes,yes,yes,no,no
+Carex plantaginea,Plantainleaf Sedge,yes,no,no,no,yes,no
+Carex radiata,Eastern Star Sedge,no,yes,yes,no,yes,no
+Carex stricta,Upright Sedge,no,no,yes,no,yes,yes
+Cephalanthus occidentalis,Common Buttonbush,yes,yes,no,no,yes,yes
+Chasmanthium latifolium,Indian Woodoats,yes,yes,no,no,yes,no
+Chelone glabra,White Turtlehead,yes,yes,yes,no,yes,yes
+Cimicifuga racemosa,Black Bugbane,yes,yes,no,no,yes,no
+Claytonia virginica,Virginia Springbeauty,no,yes,no,no,yes,no
+Coreopsis lanceolata,Lanceleaf Tickseed,yes,yes,yes,yes,no,no
+Cornus alternifolia,Alternateleaf Dogwood,yes,yes,no,no,yes,no
+Deschampsia cespitosa,Tufted Hairgrass,no,yes,no,no,no,yes
+Desmodium canadense,Showy Ticktrefoil,no,no,yes,yes,yes,no
+Dicentra cucullaria,Dutchman's Breeches,yes,yes,yes,no,yes,no
+Diervilla lonicera,Northern Bush Honeysuckle,yes,yes,no,yes,no,no
+Dryopteris marginalis,Marginal Woodfern,yes,yes,no,no,yes,no
+Echinacea purpurea,Eastern Purple Coneflower,no,yes,yes,yes,no,no
+Elymus hystrix,Eastern Bottlebrush Grass,no,yes,yes,yes,yes,no
+Equisetum hyemale,Scouringrush Horsetail,yes,yes,yes,no,yes,yes
+Eragrostis spectabilis,Purple Lovegrass,no,no,yes,no,yes,no
+Eryngium yuccifolium,Button Eryngo,no,no,yes,no,yes,no
+Erythronium americanum,Dogtooth Violet,no,yes,no,no,yes,no
+Eupatorium fistulosum,Trumpetweed,no,no,yes,yes,yes,no
+Eupatorium maculatum,Spotted Joe Pye Weed,no,yes,yes,no,yes,yes
+Eupatorium perfoliatum,Common Boneset,yes,yes,yes,no,yes,yes
+Eupatorium purpureum,Sweetscented Joe Pye Weed,yes,yes,yes,no,yes,no
+Euphorbia corollata,Flowering Spurge,no,no,yes,yes,no,no
+Eutrochium maculatum,Spotted Joe Pye Weed,no,yes,yes,no,yes,yes
+Gaillardia pulchella,Indian Blanket,no,yes,yes,yes,no,no
+Geranium maculatum,Spotted Geranium,yes,yes,no,no,yes,no
+Geum canadense,White Avens,yes,yes,no,yes,yes,no
+Geum rivale,Purple Avens,no,no,yes,no,no,yes
+Hamamelis virginiana,American Witchhazel,yes,yes,no,yes,yes,no
+Helenium autumnale,Common Sneezeweed,no,no,yes,no,yes,no
+Helianthus angustifolius,Swamp Sunflower,no,yes,no,no,no,yes
+Helianthus divaricatus,Woodland Sunflower,yes,yes,yes,yes,no,no
+Helianthus maximiliani,Maximilian Sunflower,no,no,yes,yes,yes,no
+Helianthus occidentalis,Fewleaf Sunflower,no,no,yes,yes,yes,no
+Helianthus strumosus,Paleleaf Woodland Sunflower,yes,yes,yes,yes,no,no
+Helianthus tuberosus,Jerusalem Artichoke,no,no,yes,yes,yes,no
+Heliopsis helianthoides,Smooth Oxeye,no,yes,yes,yes,no,no
+Hepatica americana,Roundlobe Hepatica,yes,yes,no,yes,yes,no
+Heuchera americana,American Alumroot,yes,yes,no,yes,yes,no
+Hydrophyllum virginianum,Eastern Waterleaf,yes,yes,no,no,yes,no
+Ilex verticillata,Common Winterberry,yes,yes,yes,yes,yes,yes
+Impatiens capensis,Jewelweed,yes,no,no,no,yes,yes
+Iris cristata,Dwarf Crested Iris,yes,yes,no,no,yes,no
+Iris versicolor,Harlequin Blueflag,no,yes,yes,no,yes,yes
+Iris virginica,Virginia Iris,no,no,yes,no,no,yes
+Jeffersonia diphylla,Twinleaf,no,yes,no,no,yes,no
+Liatris aspera,Tall Blazing Star,no,no,yes,yes,no,no
+Liatris spicata,Dense Blazing Star,no,no,yes,no,yes,no
+Lindera benzoin,Northern Spicebush,yes,yes,yes,yes,yes,yes
+Lobelia cardinalis,Cardinalflower,yes,yes,yes,no,yes,yes
+Lobelia inflata,Indian-Tobacco,,,,,,
+Lobelia kalmii,Ontario Lobelia,,,,,,
+Lobelia puberula,Downy Lobelia,,,,,,
+Lobelia siphilitica,Great Blue Lobelia,yes,yes,yes,no,yes,yes
+Lobelia spicata,Palespike Lobelia,yes,yes,yes,yes,yes,no
+Maianthemum racemosum,Feathery False Lily of the Valley,,,,,,
+Matteuccia struthiopteris,Ostrich Fern,yes,yes,no,no,yes,no
+Mertensia virginica,Virginia Bluebells,yes,yes,no,no,yes,no
+Mimulus ringens,Allegheny Monkeyflower,no,no,yes,no,yes,yes
+Mitchella repens,Partridgeberry,yes,yes,no,yes,yes,no
+Monarda didyma,Scarlet Beebalm,no,yes,yes,no,yes,yes
+Monarda fistulosa,Wild Bergamot,no,yes,yes,yes,yes,no
+Monarda punctata,Spotted Beebalm,no,no,yes,yes,no,no
+Muhlenbergia capillaris,Hairawn Muhly,no,no,yes,yes,yes,no
+Oenothera fruticosa,Narrowleaf Evening Primrose,no,no,yes,no,yes,no
+Osmunda cinnamomea,Cinnamon Fern,yes,yes,yes,no,yes,yes
+Packera aurea,Golden Ragwort,yes,yes,yes,no,yes,no
+Packera obovata,Roundleaf Ragwort,yes,yes,no,no,yes,no
+Panicum virgatum,Switchgrass,no,yes,yes,yes,yes,no
+Penstemon digitalis,Foxglove Beardtongue,no,yes,yes,yes,yes,yes
+Penstemon hirsutus,Hairy Beardtongue,yes,yes,yes,yes,no,no
+Phlox divaricata,Wild Blue Phlox,yes,yes,no,no,yes,no
+Phlox paniculata,Fall Phlox,no,no,yes,no,yes,no
+Podophyllum peltatum,Mayapple,yes,yes,no,no,yes,no
+Polemonium reptans,Greek Valerian,yes,no,no,no,yes,no
+Polygonatum biflorum,Smooth Solomon's Seal,yes,yes,no,yes,yes,no
+Polystichum acrostichoides,Christmas Fern,yes,yes,no,no,yes,no
+Pycnanthemum muticum,Clustered Mountainmint,,,,,,
+Pycnanthemum tenuifolium,Narrowleaf Mountainmint,no,yes,yes,yes,yes,no
+Pycnanthemum virginianum,Virginia Mountainmint,no,yes,no,no,yes,no
+Ratibida pinnata,Pinnate Prairie Coneflower,no,yes,yes,yes,yes,no
+Rudbeckia fulgida,Orange Coneflower,no,no,yes,no,yes,no
+Rudbeckia hirta,Blackeyed Susan,no,no,yes,yes,yes,no
+Rudbeckia laciniata,Cutleaf Coneflower,yes,yes,yes,no,yes,no
+Rudbeckia triloba,Browneyed Susan,no,yes,yes,yes,yes,no
+Salvia azurea,Azure Blue Sage,no,yes,no,yes,no,no
+Sambucus canadensis,American Black Elderberry,no,yes,no,no,no,yes
+Sanguinaria canadensis,Bloodroot,yes,yes,no,no,yes,yes
+Schizachyrium scoparium,Little Bluestem,no,yes,yes,yes,no,no
+Silene regia,Royal Catchfly,no,yes,no,yes,no,no
+Silene stellata,Widowsfrill,no,yes,no,no,yes,no
+Silphium perfoliatum,Cup Plant,no,no,yes,yes,yes,yes
+Sisyrinchium angustifolium,Narrowleaf Blue-Eyed Grass,no,yes,yes,no,yes,yes
+Solidago caesia,Wreath Goldenrod,no,yes,yes,yes,no,no
+Solidago flexicaulis,Zigzag Goldenrod,yes,yes,yes,no,yes,no
+Solidago gigantea,Giant Goldenrod,no,yes,no,,,
+Solidago nemoralis,Gray Goldenrod,yes,yes,yes,yes,no,no
+Solidago rigida,Stiff Goldenrod,yes,yes,yes,yes,yes,no
+Solidago rugosa,Wrinkleleaf Goldenrod,no,no,yes,no,no,yes
+Solidago speciosa,Showy Goldenrod,no,yes,no,no,yes,no
+Sorghastrum nutans,Indiangrass,yes,yes,yes,yes,yes,no
+Sporobolus heterolepis,Prairie Dropseed,no,no,yes,yes,no,no
+Stylophorum diphyllum,Celandine Poppy,yes,yes,no,no,yes,no
+Symphyotrichum cordifolium,Common Blue Wood Aster,no,no,yes,no,yes,no
+Symphyotrichum laeve,Smooth Blue Aster,no,no,yes,yes,no,no
+Symphyotrichum lateriflorum,Calico Aster,no,no,yes,,,
+Symphyotrichum novae,New England Aster,no,yes,no,no,yes,no
+Symphyotrichum oblongifolium,Aromatic Aster,no,yes,yes,yes,yes,no
+Symphyotrichum puniceum,Purplestem Aster,no,no,yes,no,yes,yes
+Thalictrum dioicum,Early Meadow-Rue,no,yes,no,no,yes,no
+Thelypteris palustris,Eastern Marsh Fern,no,no,yes,no,no,yes
+Tiarella cordifolia,Heartleaf Foamflower,yes,no,no,no,yes,no
+Tradescantia ohiensis,Bluejacket,no,yes,no,yes,no,no
+Tradescantia virginiana,Virginia Spiderwort,yes,yes,yes,yes,yes,no
+Trillium grandiflorum,White Trillium,yes,yes,yes,no,yes,no
+Uvularia grandiflora,Largeflower Bellwort,yes,no,no,no,yes,no
+Veratrum viride,Green False Hellebore,no,no,yes,no,no,yes
+Verbesina alternifolia,Wingstem,no,no,yes,no,yes,no
+Vernonia gigantea,Giant Ironweed,yes,yes,yes,no,yes,no
+Vernonia noveboracensis,New York Ironweed,no,no,yes,no,yes,no
+Veronicastrum virginicum,Culver's Root,no,yes,yes,no,yes,no
+Viburnum dentatum,Southern Arrowwood,yes,yes,yes,no,yes,no
+Viola canadensis,Canadian White Violet,yes,no,no,no,yes,no
+Viola cucullata,Marsh Blue Violet,yes,yes,yes,no,yes,yes
+Viola labradorica,Alpine Violet,no,no,yes,no,yes,no
+Viola palmata,Early Blue Violet,no,yes,no,no,yes,no
+Viola pedata,Birdfoot Violet,yes,yes,no,yes,no,no
+Viola sororia,Common Blue Violet,no,yes,yes,no,yes,no
+Zizia aptera,Meadow Zizia,yes,yes,yes,no,yes,no
+Zizia aurea,Golden Zizia,no,yes,yes,no,yes,no

@@ -82,7 +82,9 @@ class TransformSymbol(luigi.Task):
         return TransformPlantList()
 
     def output(self):
-        return luigi.LocalTarget(f"data/transformed/usda/symbols/{self.scientific_name}.txt")
+        return luigi.LocalTarget(
+            f"data/transformed/usda/symbols/{self.scientific_name}.txt"
+        )
 
     def run(self):
         with self.input().open("r") as f:
@@ -139,11 +141,26 @@ class TransformCommonName(luigi.Task):
         return ExtractPlantProfile(scientific_name=self.scientific_name)
 
     def output(self):
-        return luigi.LocalTarget(f"data/transformed/usda/common-names/{self.scientific_name}.txt")
+        return luigi.LocalTarget(
+            f"data/transformed/usda/common-names/{self.scientific_name}.json"
+        )
 
     def run(self):
         with self.input().open("r") as f:
             data = json.load(f)
-            foobar = data["CommonName"]
+            # from USDA, capitalization will be inconsistent
+            common_name = data["CommonName"]
+
+            # title() will capitalize "gray's" like "Gray'S"
+            # this uses it, but then fixes the conjuctions
+            sanitized = (
+                common_name.title()
+                .replace("'S", "'s")
+                .replace(" In ", " in ")
+                .replace(" The ", " the ")
+                .replace(" Of ", " of ")
+            )
+
+            result = {"common_name": sanitized}
             with self.output().open("w") as f:
-                f.write(foobar)
+                f.write(json.dumps(result))

@@ -1,4 +1,5 @@
 import csv
+import json
 import luigi
 import tasks.datasources.usda as usda
 import tasks.datasources.wildflower as wildflower
@@ -8,7 +9,7 @@ class GeneratePlantsCsv(luigi.Task):
     plants_filename: str = luigi.Parameter()
 
     def output(self):
-        return luigi.LocalTarget(f"data/out/plants.csv")
+        return luigi.LocalTarget("data/out/plants.csv")
 
     def complete(self):
         # Always run this Task, even if the output file exists
@@ -18,7 +19,16 @@ class GeneratePlantsCsv(luigi.Task):
         with open(self.plants_filename) as plant_file:
             scientific_names = plant_file.read().splitlines()
 
-        fields = ["scientific_name", "common_name", "moisture", "shade"]
+        fields = [
+            "scientific_name",
+            "common_name",
+            "full_shade",
+            "part_shade",
+            "full_sun",
+            "low_moisture",
+            "medium_moisture",
+            "high_moisture",
+        ]
         with self.output().open("w") as out:
             csv_out = csv.DictWriter(out, fields)
             csv_out.writeheader()
@@ -27,21 +37,33 @@ class GeneratePlantsCsv(luigi.Task):
                 print(
                     f"Processing {scientific_name} ({i+1} of {len(scientific_names)})"
                 )
-                common_name_task = usda.TransformCommonName(scientific_name)
-                moisture_task = wildflower.TransformMoisture(scientific_name)
-                shade_task = wildflower.TransformShade(scientific_name)
+
+                tasks = [
+                    usda.TransformCommonName(scientific_name),
+                    wildflower.TransformMoisture(scientific_name),
+                    wildflower.TransformShade(scientific_name),
+                ]
+
                 luigi.build(
-                    [common_name_task, moisture_task, shade_task],
-                    workers=3,
+                    tasks,
+                    workers=len(tasks),
                     local_scheduler=True,
                 )
 
-                row_out = {"scientific_name": scientific_name}
-                with common_name_task.output().open() as f:
-                    row_out["common_name"] = f.read().strip()
-                with moisture_task.output().open() as f:
-                    row_out["moisture"] = f.read().strip()
-                with shade_task.output().open() as f:
-                    row_out["shade"] = f.read().strip()
+                row_out = {"scientific_name": scientific_name.capitalize()}
+                for task in tasks:
+                    with task.output().open() as f:
+                        json_str = f.read().strip()
+                        if json_str:
+                            parsed = json.loads(json_str)
+
+                            # Switch True/False to yes/no for csv
+                            for k, v in parsed.items():
+                                if v is True:
+                                    parsed[k] = "yes"
+                                elif v is False:
+                                    parsed[k] = "no"
+
+                            row_out.update(parsed)
 
                 csv_out.writerow(row_out)

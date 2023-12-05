@@ -4,6 +4,7 @@ import time
 from tasks.lenient import LenientTask, StrictError
 from bs4 import BeautifulSoup
 import tasks.datasources.usda as usda
+import json
 
 
 class ExtractWildflowerHtml(LenientTask):
@@ -45,34 +46,25 @@ class TransformMoisture(LenientTask):
 
     def output(self):
         return luigi.LocalTarget(
-            f"data/transformed/wildflower/moisture/{self.scientific_name}.txt"
+            f"data/transformed/wildflower/moisture/{self.scientific_name}.json"
         )
 
     def run_lenient(self):
         with self.input().open("r") as f:
             soup = BeautifulSoup(f, "html.parser")
 
-            wf_moistures = (
-                soup.find("strong", string="Soil Moisture:")
-                .next_sibling.strip()
-                .split(",")
-            )
+            wf_moistures = soup.find(
+                "strong", string="Soil Moisture:"
+            ).next_sibling.strip()
 
-            pl_moistures = []
-            if any(wf_moistures):
-                for wf_moisture in wf_moistures:
-                    match wf_moisture.strip():
-                        case "Dry":
-                            pl_moistures.append("None")
-                        case "Moist":
-                            pl_moistures.append("Some")
-                        case "Wet":
-                            pl_moistures.append("Lots")
-                        case _:
-                            raise StrictError("Unexpected moisture: {wf_moisture}")
+            result = {}
+            if wf_moistures:
+                result["low_moisture"] = "Dry" in wf_moistures
+                result["medium_moisture"] = "Moist" in wf_moistures
+                result["high_moisture"] = "Wet" in wf_moistures
 
             with self.output().open("w") as f:
-                f.write(",".join(pl_moistures))
+                f.write(json.dumps(result, indent=4))
 
 
 class TransformShade(LenientTask):
@@ -82,30 +74,27 @@ class TransformShade(LenientTask):
         return ExtractWildflowerHtml(scientific_name=self.scientific_name)
 
     def output(self):
-        return luigi.LocalTarget(f"data/transformed/wildflower/shade/{self.scientific_name}.txt")
+        return luigi.LocalTarget(
+            f"data/transformed/wildflower/shade/{self.scientific_name}.json"
+        )
 
     def run_lenient(self):
         with self.input().open("r") as f:
             soup = BeautifulSoup(f, "html.parser")
 
-            wf_moistures = (
+            wf_shades = (
                 soup.find("strong", string="Light Requirement:")
                 .next_sibling.strip()
                 .split(",")
             )
 
-            pl_moistures = []
-            if any(wf_moistures):
-                for wf_moisture in wf_moistures:
-                    match wf_moisture.strip():
-                        case "Sun":
-                            pl_moistures.append("None")
-                        case "Part Shade":
-                            pl_moistures.append("Some")
-                        case "Shade":
-                            pl_moistures.append("Lots")
-                        case _:
-                            raise StrictError(f"Unexpected shade: {wf_moisture}")
+            wf_shades = [s.strip() for s in wf_shades]
+
+            result = {}
+            if wf_shades:
+                result["full_sun"] = "Sun" in wf_shades
+                result["part_shade"] = "Part Shade" in wf_shades
+                result["full_shade"] = "Shade" in wf_shades
 
             with self.output().open("w") as f:
-                f.write(",".join(pl_moistures))
+                f.write(json.dumps(result, indent=4))
