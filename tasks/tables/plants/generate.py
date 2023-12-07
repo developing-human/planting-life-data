@@ -4,7 +4,6 @@ import luigi
 import tasks.datasources.usda as usda
 import tasks.datasources.wildflower as wildflower
 import tasks.datasources.chatgpt as chatgpt
-from tasks.lenient import LenientTask
 
 
 class GeneratePlantsCsv(luigi.Task):
@@ -82,7 +81,7 @@ class AggregateFieldTask(luigi.Task):
                     f.write(output)
                     break
 
-    def get_prioritized_tasks(self):
+    def get_prioritized_tasks(self) -> list[luigi.Task]:
         raise NotImplementedError(
             "Must implement AggregateFieldTask.get_prioritized_tasks"
         )
@@ -94,7 +93,7 @@ class AggregateShade(AggregateFieldTask):
     def output(self):
         return luigi.LocalTarget(f"data/aggregated/shade/{self.scientific_name}.json")
 
-    def get_prioritized_tasks(self):
+    def get_prioritized_tasks(self) -> list[luigi.Task]:
         return [
             wildflower.TransformShade(scientific_name=self.scientific_name),
             chatgpt.TransformShade(scientific_name=self.scientific_name),
@@ -109,7 +108,7 @@ class AggregateMoisture(AggregateFieldTask):
             f"data/aggregated/moisture/{self.scientific_name}.json"
         )
 
-    def get_prioritized_tasks(self):
+    def get_prioritized_tasks(self) -> list[luigi.Task]:
         return [
             wildflower.TransformMoisture(scientific_name=self.scientific_name),
             chatgpt.TransformMoisture(scientific_name=self.scientific_name),

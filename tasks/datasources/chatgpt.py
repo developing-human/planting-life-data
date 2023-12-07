@@ -1,10 +1,7 @@
 import luigi
-import requests
-import time
 from tasks.lenient import LenientTask
 import json
 import openai
-import os
 import re
 
 MODEL_GPT_3_5 = "gpt-3.5-turbo"
@@ -156,9 +153,9 @@ def find_yes_answers(text: str, questions: list[str]) -> list[str]:
                     yes_answers.append(question)
 
     if answer_count != len(questions):
-        raise ValueError(f"did not find all condition answers")
+        raise ValueError("did not find all condition answers")
 
     if not yes_answers:
-        raise ValueError(f"did not find any yes answers")
+        raise ValueError("did not find any yes answers")
 
     return yes_answers
