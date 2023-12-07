@@ -3,6 +3,8 @@ import json
 import luigi
 import tasks.datasources.usda as usda
 import tasks.datasources.wildflower as wildflower
+import tasks.datasources.chatgpt as chatgpt
+from tasks.lenient import LenientTask
 
 
 class GeneratePlantsCsv(luigi.Task):
@@ -40,8 +42,8 @@ class GeneratePlantsCsv(luigi.Task):
 
                 tasks = [
                     usda.TransformCommonName(scientific_name),
-                    wildflower.TransformMoisture(scientific_name),
-                    wildflower.TransformShade(scientific_name),
+                    AggregateMoisture(scientific_name),
+                    AggregateShade(scientific_name),
                 ]
 
                 luigi.build(
@@ -67,3 +69,48 @@ class GeneratePlantsCsv(luigi.Task):
                             row_out.update(parsed)
 
                 csv_out.writerow(row_out)
+
+
+class AggregateFieldTask(luigi.Task):
+    def run(self):
+        for task in self.get_prioritized_tasks():
+            yield task
+
+            output = task.output().open("r").read()
+            if output.strip():
+                with self.output().open("w") as f:
+                    f.write(output)
+                    break
+
+    def get_prioritized_tasks(self):
+        raise NotImplementedError(
+            "Must implement AggregateFieldTask.get_prioritized_tasks"
+        )
+
+
+class AggregateShade(AggregateFieldTask):
+    scientific_name: str = luigi.Parameter()
+
+    def output(self):
+        return luigi.LocalTarget(f"data/aggregated/shade/{self.scientific_name}.json")
+
+    def get_prioritized_tasks(self):
+        return [
+            wildflower.TransformShade(scientific_name=self.scientific_name),
+            chatgpt.TransformShade(scientific_name=self.scientific_name),
+        ]
+
+
+class AggregateMoisture(AggregateFieldTask):
+    scientific_name: str = luigi.Parameter()
+
+    def output(self):
+        return luigi.LocalTarget(
+            f"data/aggregated/moisture/{self.scientific_name}.json"
+        )
+
+    def get_prioritized_tasks(self):
+        return [
+            wildflower.TransformMoisture(scientific_name=self.scientific_name),
+            chatgpt.TransformMoisture(scientific_name=self.scientific_name),
+        ]

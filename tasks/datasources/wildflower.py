@@ -39,6 +39,7 @@ class ExtractWildflowerHtml(LenientTask):
 
 
 class TransformMoisture(LenientTask):
+    task_namespace = "wildflower"  # allows tasks of same name in diff packages
     scientific_name: str = luigi.Parameter()
 
     def requires(self):
@@ -68,6 +69,7 @@ class TransformMoisture(LenientTask):
 
 
 class TransformShade(LenientTask):
+    task_namespace = "wildflower"  # allows tasks of same name in diff packages
     scientific_name: str = luigi.Parameter()
 
     def requires(self):
