@@ -24,9 +24,9 @@ Bouteloua curtipendula,Sideoats Grama,no,yes,yes,yes,yes,no
 Caltha palustris,Yellow Marsh Marigold,yes,yes,no,no,yes,yes
 Campanula americana,American Bellflower,no,yes,no,no,yes,no
 Carex amphibola,Eastern Narrowleaf Sedge,yes,yes,no,no,yes,yes
-Carex appalachica,Appalachian Sedge,yes,yes,no,,,
+Carex appalachica,Appalachian Sedge,yes,yes,no,no,yes,yes
 Carex crinita,Fringed Sedge,yes,yes,no,no,yes,yes
-Carex grayi,Gray's Sedge,no,yes,no,,,
+Carex grayi,Gray's Sedge,no,yes,no,no,yes,yes
 Carex pensylvanica,Pennsylvania Sedge,yes,yes,yes,yes,no,no
 Carex plantaginea,Plantainleaf Sedge,yes,no,no,no,yes,no
 Carex radiata,Eastern Star Sedge,no,yes,yes,no,yes,no
@@ -81,12 +81,12 @@ Liatris aspera,Tall Blazing Star,no,no,yes,yes,no,no
 Liatris spicata,Dense Blazing Star,no,no,yes,no,yes,no
 Lindera benzoin,Northern Spicebush,yes,yes,yes,yes,yes,yes
 Lobelia cardinalis,Cardinalflower,yes,yes,yes,no,yes,yes
-Lobelia inflata,Indian-Tobacco,,,,,,
-Lobelia kalmii,Ontario Lobelia,,,,,,
-Lobelia puberula,Downy Lobelia,,,,,,
+Lobelia inflata,Indian-Tobacco,no,yes,yes,no,yes,yes
+Lobelia kalmii,Ontario Lobelia,no,yes,yes,no,yes,yes
+Lobelia puberula,Downy Lobelia,no,yes,no,no,yes,yes
 Lobelia siphilitica,Great Blue Lobelia,yes,yes,yes,no,yes,yes
 Lobelia spicata,Palespike Lobelia,yes,yes,yes,yes,yes,no
-Maianthemum racemosum,Feathery False Lily of the Valley,,,,,,
+Maianthemum racemosum,Feathery False Lily of the Valley,yes,yes,no,no,yes,yes
 Matteuccia struthiopteris,Ostrich Fern,yes,yes,no,no,yes,no
 Mertensia virginica,Virginia Bluebells,yes,yes,no,no,yes,no
 Mimulus ringens,Allegheny Monkeyflower,no,no,yes,no,yes,yes
@@ -108,7 +108,7 @@ Podophyllum peltatum,Mayapple,yes,yes,no,no,yes,no
 Polemonium reptans,Greek Valerian,yes,no,no,no,yes,no
 Polygonatum biflorum,Smooth Solomon's Seal,yes,yes,no,yes,yes,no
 Polystichum acrostichoides,Christmas Fern,yes,yes,no,no,yes,no
-Pycnanthemum muticum,Clustered Mountainmint,,,,,,
+Pycnanthemum muticum,Clustered Mountainmint,no,yes,yes,no,yes,yes
 Pycnanthemum tenuifolium,Narrowleaf Mountainmint,no,yes,yes,yes,yes,no
 Pycnanthemum virginianum,Virginia Mountainmint,no,yes,no,no,yes,no
 Ratibida pinnata,Pinnate Prairie Coneflower,no,yes,yes,yes,yes,no
@@ -126,7 +126,7 @@ Silphium perfoliatum,Cup Plant,no,no,yes,yes,yes,yes
 Sisyrinchium angustifolium,Narrowleaf Blue-Eyed Grass,no,yes,yes,no,yes,yes
 Solidago caesia,Wreath Goldenrod,no,yes,yes,yes,no,no
 Solidago flexicaulis,Zigzag Goldenrod,yes,yes,yes,no,yes,no
-Solidago gigantea,Giant Goldenrod,no,yes,no,,,
+Solidago gigantea,Giant Goldenrod,no,yes,no,no,yes,yes
 Solidago nemoralis,Gray Goldenrod,yes,yes,yes,yes,no,no
 Solidago rigida,Stiff Goldenrod,yes,yes,yes,yes,yes,no
 Solidago rugosa,Wrinkleleaf Goldenrod,no,no,yes,no,no,yes
@@ -136,7 +136,7 @@ Sporobolus heterolepis,Prairie Dropseed,no,no,yes,yes,no,no
 Stylophorum diphyllum,Celandine Poppy,yes,yes,no,no,yes,no
 Symphyotrichum cordifolium,Common Blue Wood Aster,no,no,yes,no,yes,no
 Symphyotrichum laeve,Smooth Blue Aster,no,no,yes,yes,no,no
-Symphyotrichum lateriflorum,Calico Aster,no,no,yes,,,
+Symphyotrichum lateriflorum,Calico Aster,no,no,yes,no,yes,yes
 Symphyotrichum novae,New England Aster,no,yes,no,no,yes,no
 Symphyotrichum oblongifolium,Aromatic Aster,no,yes,yes,yes,yes,no
 Symphyotrichum puniceum,Purplestem Aster,no,no,yes,no,yes,yes
