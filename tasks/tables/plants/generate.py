@@ -29,6 +29,10 @@ class GeneratePlantsCsv(luigi.Task):
             "low_moisture",
             "medium_moisture",
             "high_moisture",
+            "moisture_source",
+            "moisture_source_detail",
+            "shade_source",
+            "shade_source_detail",
         ]
         with self.output().open("w") as out:
             csv_out = csv.DictWriter(out, fields)

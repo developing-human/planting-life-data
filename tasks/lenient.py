@@ -23,8 +23,12 @@ class LenientTask(luigi.Task):
                 f"Creating blank output after task failed with error: {e}",
             )
             logging.debug(traceback.format_exc())
-            with self.output().open("w") as _:
-                pass
+
+            # Write blank to each output (may be one output or list)
+            outputs = self.output() if type(self.output()) is list else [self.output()]
+            for output in outputs:
+                with output.open("w") as _:
+                    pass
 
     def run_lenient(self):
         raise NotImplementedError("Subclasses should implement this!")

@@ -8,6 +8,8 @@ MODEL_GPT_3_5 = "gpt-3.5-turbo"
 MODEL_GPT_4 = "gpt-4"
 MODEL_GPT_4_TURBO = "gpt-4-1106-preview"
 
+SOURCE_NAME = "ChatGPT"
+
 
 class ChatGptTask(LenientTask):
     def run_lenient(self):
@@ -95,6 +97,8 @@ class TransformMoisture(LenientTask):
 
         with self.input().open("r") as f:
             result = build_condition_result(f.read(), question_to_field)
+            result["moisture_source"] = SOURCE_NAME
+            result["moisture_source_detail"] = self.requires().get_model()
 
             with self.output().open("w") as f:
                 f.write(json.dumps(result, indent=4))
@@ -121,6 +125,8 @@ class TransformShade(LenientTask):
 
         with self.input().open("r") as f:
             result = build_condition_result(f.read(), question_to_field)
+            result["shade_source"] = SOURCE_NAME
+            result["shade_source_detail"] = self.requires().get_model()
 
             with self.output().open("w") as f:
                 f.write(json.dumps(result, indent=4))
