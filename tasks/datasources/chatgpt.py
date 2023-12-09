@@ -12,6 +12,11 @@ SOURCE_NAME = "ChatGPT"
 
 
 class ChatGptTask(LenientTask):
+    """An abstract task for prompting ChatGPT.
+
+    Implementors should override get_prompt and optionally get_model.
+    """
+
     def run_lenient(self):
         client = openai.OpenAI()
 
@@ -31,14 +36,21 @@ class ChatGptTask(LenientTask):
             f.write(response.choices[0].message.content)
 
     def get_model(self):
-        # Default to a cheap/fast model
+        """The ChatGPT model to use, defaulting to 3.5 because it's fast/cheap"""
         return MODEL_GPT_3_5
 
     def get_prompt(self):
+        """The prompt to submit to ChatGPT"""
         raise NotImplementedError("get_prompt must be overridden by subclasses")
 
 
 class ExtractGrowingConditions(ChatGptTask):
+    """Prompts ChatGPT for the growing conditions of a plant.
+
+    Input: scientific name of plant (genus + species)
+    Output: ChatGPT's text response to the prompt
+    """
+
     scientific_name: str = luigi.Parameter()
 
     def output(self):
@@ -77,6 +89,17 @@ For example:
 
 
 class TransformMoisture(LenientTask):
+    """Parses a plant's moisture preferences from ChatGPT's growing condition response.
+
+    Input: scientific name of plant (genus + species)
+    Output: A JSON object with:
+        low_moisture: Will this plant grow in low moisture?
+        medium_moisture: Will this plant grow in medium moisture?
+        high_moisture: Will this plant grow in high moisture?
+        moisture_source: Always set to "ChatGPT"
+        moisture_source_detail: The ChatGPT model which was used
+    """
+
     task_namespace = "chatgpt"  # allows tasks of same name in diff packages
     scientific_name: str = luigi.Parameter()
 
@@ -105,6 +128,17 @@ class TransformMoisture(LenientTask):
 
 
 class TransformShade(LenientTask):
+    """Parses a plant's shade preferences from ChatGPT's growing condition response.
+
+    Input: scientific name of plant (genus + species)
+    Output: A JSON object with:
+        full_sun: Will this plant grow in full sun?
+        part_shade: Will this plant grow in part shade?
+        full_shade: Will this plant grow in full shade?
+        shade_source: Always set to "ChatGPT"
+        shade_source_detail: The ChatGPT model which was used
+    """
+
     task_namespace = "chatgpt"  # allows tasks of same name in diff packages
     scientific_name: str = luigi.Parameter()
 
@@ -135,6 +169,7 @@ class TransformShade(LenientTask):
 def build_condition_result(
     text: str, question_to_field: dict[str, str]
 ) -> dict[str, bool]:
+    """Parses the given text into a dict of True/False answers to each question"""
     result = {}
 
     yes_answers = find_yes_answers(text, question_to_field.keys())
@@ -145,22 +180,39 @@ def build_condition_result(
 
 
 def find_yes_answers(text: str, questions: list[str]) -> list[str]:
+    """Parses the given text into a list of the questions with yes answers"""
+    # Support prefixes like:
+    # - foo
+    #    - foo
+    #  -    foo
+    # 1. foo
+    # 2.    foo
     prefix_regex = re.compile(r"[ ]*-[ ]*|\d\. *")
 
     answer_count = 0
     yes_answers = []
     for line in text.split("\n"):
+        # Remove the prefix
         line = prefix_regex.sub("", line)
 
+        # Find lines which start with question text
+        # and also contain "yes"
         for question in questions:
             if line.startswith(question):
                 answer_count += 1
-                if "yes" in line:
+
+                # Does "yes" appear in the line after removing the question?
+                # Question is removed to protect against questions which contain "yes"
+                if "yes" in line.replace(question, ""):
                     yes_answers.append(question)
 
+    # If not all questions are answered, the input text was invalid
     if answer_count != len(questions):
         raise ValueError("did not find all condition answers")
 
+    # If nothing is answered yes, the response is invalid
+    # This is context sensitive to the moisture/shade questions where
+    # at least one from each category should be yes.
     if not yes_answers:
         raise ValueError("did not find any yes answers")
 

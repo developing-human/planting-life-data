@@ -7,6 +7,10 @@ import logging
 
 
 class ExtractPlantList(luigi.Task):
+    """Fetches USDA's CSV of all plants.
+
+    It has details like USDA symbol, scientific name and common name."""
+
     def output(self):
         return luigi.LocalTarget("data/raw/usda/plant-complete-list.csv")
 
@@ -19,8 +23,7 @@ class ExtractPlantList(luigi.Task):
 
 
 class TransformPlantList(luigi.Task):
-    """Reads the CSV plant list, and writes a JSON object which maps
-    scientific name to USDA symbol."""
+    """Converts USDA's plant list into a JSON map from scientific name to USDA symbol"""
 
     def requires(self):
         return ExtractPlantList()
@@ -42,18 +45,17 @@ class TransformPlantList(luigi.Task):
                 # Removing it cleans up the results a bit
                 full_name = full_name.replace("\u00c3\u0097", "")
 
-                words = full_name.split(" ")
-
                 # Skip single word scientific names (edge case, may not happen)
+                words = full_name.split(" ")
                 if len(words) < 2:
                     continue
 
                 # Skip plants where second word is uppercase.
-                # These are author names on one word scientifc names.
+                # These are author names on genus-only scientifc names.
                 if words[1][0].isupper():
                     continue
 
-                # Use the first two words, lowercase, as the official name
+                # Use the genus + species, lowercase, as the official name
                 sanitized_name = " ".join(words[:2]).lower()
                 symbol = row.get("Symbol")
 
@@ -76,6 +78,12 @@ class TransformPlantList(luigi.Task):
 
 
 class TransformSymbol(luigi.Task):
+    """Converts a scientific name into a USDA symbol.
+
+    Input: scientific name of plant (genus + species)
+    Output: USDA's symbol for this plant
+    """
+
     scientific_name: str = luigi.Parameter()
 
     def requires(self):
@@ -89,11 +97,13 @@ class TransformSymbol(luigi.Task):
     def run(self):
         with self.input().open("r") as f:
             scientific_name_to_symbol: dict[str, str] = json.load(f)
+
+            # First, try to lookup the scientific name directly.
             symbol = scientific_name_to_symbol.get(self.scientific_name, None)
 
-            # If not found, check if any usda scientific names start with this name
+            # If not found, check if any USDA scientific names start with this name
             # Ran into this with symphyotrichum novae / symphyotrichum novae-angliae
-            # This may be slow, but hopefully rare
+            # This may be slow, but is hopefully uncommon
             if symbol is None:
                 logging.warning(
                     f"{self.scientific_name} not found in map, scanning for prefix"
@@ -104,13 +114,27 @@ class TransformSymbol(luigi.Task):
                         symbol = value
                         break
 
-            # TODO: What if still not found?
+            # If still not found, this is assumed to be an invalid scientific name.
+            # Currently, this means the input has an invalid scientific name.
+            # TODO: Should this fail more gracefully?  Currently the script fails.
+            if symbol is None:
+                raise ValueError(f"Cannot find USDA symbol for: {self.scientific_name}")
 
             with self.output().open("w") as f:
                 f.write(symbol)
 
 
 class ExtractPlantProfile(luigi.Task):
+    """Fetches USDA's plant profile for a single plant.
+
+    The plant profile has information like common name, links to plant guides,
+    annual vs perennial, and coarse native status.
+
+    Input: scientific name of plant (genus + species)
+    Output: The JSON for the plant profile
+
+    """
+
     scientific_name: str = luigi.Parameter()
 
     def requires(self):
@@ -135,6 +159,13 @@ class ExtractPlantProfile(luigi.Task):
 
 
 class TransformCommonName(luigi.Task):
+    """Parses a plant's common name out of the USDA Plant Profile.
+
+    Input: scientific name of plant (genus + species)
+    Output: A JSON object with:
+        "common_name": the plant's common name, formatted in title case
+    """
+
     scientific_name: str = luigi.Parameter()
 
     def requires(self):
