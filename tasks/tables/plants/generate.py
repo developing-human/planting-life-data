@@ -12,9 +12,10 @@ class GeneratePlantsCsv(luigi.Task):
     def output(self):
         return luigi.LocalTarget("data/out/plants.csv")
 
-    def complete(self):
-        # Always run this Task, even if the output file exists
-        return False
+    # TODO: Solve this differently... causes issues when chaining.
+    # def complete(self):
+    #     # Always run this Task, even if the output file exists
+    #     return False
 
     def run(self):
         with open(self.plants_filename) as plant_file:
@@ -72,6 +73,53 @@ class GeneratePlantsCsv(luigi.Task):
                             row_out.update(parsed)
 
                 csv_out.writerow(row_out)
+
+
+class GeneratePlantsSql(luigi.Task):
+    plants_filename: str = luigi.Parameter()
+
+    def output(self):
+        return luigi.LocalTarget("data/out/plants.sql")
+
+    def requires(self):
+        return GeneratePlantsCsv(plants_filename=self.plants_filename)
+
+    # def complete(self):
+    #     # Always run this Task, even if the output file exists
+    #     return False
+
+    def run(self):
+        with self.input().open() as plant_csv, self.output().open("w") as out:
+            reader = csv.DictReader(plant_csv)
+
+            def to_conditions_str(
+                row: dict, none_field: str, some_field: str, lots_field: str
+            ) -> str:
+                conditions = []
+                if row[none_field] == "yes":
+                    conditions.append("None")
+                if row[some_field] == "yes":
+                    conditions.append("Some")
+                if row[lots_field] == "yes":
+                    conditions.append("Lots")
+
+                return ",".join(conditions)
+
+            for row in reader:
+                shades_str = to_conditions_str(
+                    row, "full_sun", "part_shade", "full_shade"
+                )
+                moistures_str = to_conditions_str(
+                    row, "low_moisture", "medium_moisture", "high_moisture"
+                )
+                scientific_name = row["scientific_name"]
+
+                sql = (
+                    "UPDATE plants "
+                    + f"SET shades = '{shades_str}', moistures = '{moistures_str}' "
+                    + f"WHERE scientific_name = '{scientific_name}';"
+                )
+                out.write(sql + "\n")
 
 
 class AggregateFieldTask(luigi.Task):
