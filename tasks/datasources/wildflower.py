@@ -1,7 +1,7 @@
 import luigi
 import requests
 import time
-from tasks.lenient import LenientTask
+from tasks.lenient import LenientTask, StrictError
 from bs4 import BeautifulSoup
 import tasks.datasources.usda as usda
 import json
@@ -93,9 +93,10 @@ class TransformMoisture(LenientTask):
             soup = BeautifulSoup(content, "html.parser")
 
             # Find "Soil Moisture:" in the html, moistures are in next element
-            wf_moistures = soup.find(
-                "strong", string="Soil Moisture:"
-            ).next_sibling.strip()
+            wf_moistures = soup.find("strong", string="Soil Moisture:")
+
+            if wf_moistures:
+                wf_moistures = wf_moistures.next_sibling.strip()
 
             # Convert wildflower moistures to our data format
             result = {}
@@ -106,9 +107,21 @@ class TransformMoisture(LenientTask):
                 result["moisture_source"] = SOURCE_NAME
                 result["moisture_source_detail"] = source_detail.read()
 
+                remaining = (
+                    wf_moistures.replace("Dry", "")
+                    .replace("Moist", "")
+                    .replace("Wet", "")
+                    .replace(",", "")
+                    .strip()
+                )
+
+                if remaining != "":
+                    raise StrictError(f"Unexpected moisture: {remaining}")
+
             # Write formatted JSON, for easier troubleshooting
             with self.output().open("w") as f:
-                f.write(json.dumps(result, indent=4))
+                if result:
+                    f.write(json.dumps(result, indent=4))
 
 
 class TransformShade(LenientTask):

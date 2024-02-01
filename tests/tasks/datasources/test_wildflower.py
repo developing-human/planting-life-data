@@ -1,5 +1,6 @@
 import pytest
 import luigi
+import json
 from luigi.mock import MockTarget
 from tasks.datasources.wildflower import TransformMoisture
 from tasks.lenient import StrictError
@@ -8,7 +9,7 @@ from tasks.lenient import StrictError
 @pytest.fixture
 def moisture_task():
     task = TransformMoisture(scientific_name="test_name")
-    task.input = lambda: MockTarget("input")
+    task.input = lambda: [MockTarget("input"), MockTarget("input")]
     task.output = lambda: MockTarget("output")
     return task
 
@@ -17,12 +18,20 @@ def test_all_values(moisture_task):
     result = run_task(
         moisture_task, "<strong>Soil Moisture:</strong>Dry , Moist , Wet <br/>"
     )
-    assert result == "None,Some,Lots"
+
+    result_json = json.loads(result)
+    assert result_json["low_moisture"] == True
+    assert result_json["medium_moisture"] == True
+    assert result_json["high_moisture"] == True
 
 
 def test_one_values(moisture_task):
     result = run_task(moisture_task, "<strong>Soil Moisture:</strong>Dry<br/>")
-    assert result == "None"
+
+    result_json = json.loads(result)
+    assert result_json["low_moisture"] == True
+    assert result_json["medium_moisture"] == False
+    assert result_json["high_moisture"] == False
 
 
 def test_no_soil_moisture(moisture_task):
@@ -36,8 +45,11 @@ def test_invalid_soil_moisture(moisture_task):
 
 
 def run_task(task: luigi.Task, input: str) -> str:
-    with task.input().open("w") as f:
+    with task.input()[0].open("w") as f:
         f.write(input)
+
+    # with inputs[1].open("w") as f:
+    # f.write("a source url")
 
     task.run()
 
