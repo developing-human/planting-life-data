@@ -3,6 +3,7 @@ from tasks.lenient import LenientTask
 import json
 import openai
 import re
+from typing import Optional
 
 MODEL_GPT_3_5 = "gpt-3.5-turbo"
 MODEL_GPT_4 = "gpt-4"
@@ -217,3 +218,131 @@ def find_yes_answers(text: str, questions: list[str]) -> list[str]:
         raise ValueError("did not find any yes answers")
 
     return yes_answers
+
+
+class ExtractPollinatorRating(ChatGptTask):
+    """Prompts ChatGPT for the pollinator rating of a plant.
+
+    Input: scientific name of plant (genus + species)
+    Output: ChatGPT's text response to the prompt
+    """
+
+    scientific_name: str = luigi.Parameter()
+
+    def output(self):
+        return luigi.LocalTarget(
+            f"data/raw/chatgpt/pollinator_rating/{self.scientific_name}.{self.get_model()}.txt"
+        )
+
+    # TODO: Some of this prompt is shared with other ratings.  Could subclass or put in a string.
+    def get_prompt(self):
+        return f"""Your goal is to rate {self.scientific_name} compared to other plants 
+with respect to how well it supports pollinators.  To do this, lets think step by step.
+
+First, explain how well it supports the pollinators of an ecosystem.  Consider its 
+contributions as a food source, shelter, and larval host. If it supports specific 
+species, mention them. Also explain how it is deficient, if applicable.
+
+Next, compare how well it does compared to other plants. 
+
+Finally, rate how well it supports them on a scale from 
+1-10 compared to other plants.
+
+Your entire response will be formatted as follows, the 
+'rating:' label is REQUIRED:
+```
+Your 2-4 sentence explanation.
+
+Your 2-4 sentence comparison.
+
+rating: Your integer rating from 1-10, compared to other
+plants. 1-3 is average, 4-8 is for strong contributors,
+9-10 is for the very best.
+```
+
+For example (the 'rating:' label is REQUIRED):
+```
+<plant name> are... (2-4 sentences)
+
+Compared to other plants... (2-4 sentences)
+
+rating: 3
+```"""
+
+    def get_model(self):
+        return MODEL_GPT_4_TURBO
+
+
+class TransformPollinatorRating(LenientTask):
+    """Parses a plant's pollinator rating from ChatGPT's response.
+
+    Input: scientific name of plant (genus + species)
+    Output: A JSON object with:
+        pollinator_rating: an integer between 1 and 10
+    """
+
+    task_namespace = "chatgpt"  # allows tasks of same name in diff packages
+    scientific_name: str = luigi.Parameter()
+
+    def requires(self):
+        return ExtractPollinatorRating(scientific_name=self.scientific_name)
+
+    def output(self):
+        return luigi.LocalTarget(
+            f"data/transformed/chatgpt/pollinator_rating/{self.scientific_name}.json"
+        )
+
+    def run_lenient(self):
+        with self.input().open("r") as f:
+            rating = self.parse_rating(f.read())
+            result = {"rating": rating}
+
+            with self.output().open("w") as f:
+                f.write(json.dumps(result, indent=4))
+
+    def parse_rating(self, raw_response: str) -> int:
+        print(f"Got: {raw_response}")
+        # Split the raw response into lines
+        lines = raw_response.split("\n")
+
+        print(f"len(lines): {len(lines)}")
+
+        # First, try to find the structured rating, as this is what
+        # is usually returned.
+        # Find the line which contains "rating:"
+        for line in lines:
+            if "rating:" in line.lower():
+                # There could be spaces before rating or after the colon.
+                # Split on the colon and trim any whitespace.
+                rating_split = line.split(":")
+                rating_str = rating_split[1].strip()
+
+                try:
+                    return int(rating_str)
+                except ValueError:
+                    print(f"Failed to parse: {rating_str}")
+                    continue
+
+        print("Didn't find structured")
+
+        # Find any matching regexes which can capture the rating.  Try to parse it.
+        # As the LLM finds more creative ways to not follow instructions, add to
+        # this list.
+        unstructured_regexes = [
+            r"(\d) out of 10",
+            r"(\d) on a scale from 1 to 10",
+            r"(\d)/10",
+            r"rate [a-zA-Z ]* as a (\d)",
+        ]
+
+        for unstructured_regex in unstructured_regexes:
+            regex = re.compile(unstructured_regex)
+            matches = regex.findall(raw_response)
+
+            for match in matches:
+                try:
+                    return int(match)
+                except ValueError:
+                    continue
+
+        raise ValueError(f"Could not parse rating from response: {raw_response}")
