@@ -301,11 +301,8 @@ class TransformPollinatorRating(LenientTask):
                 f.write(json.dumps(result, indent=4))
 
     def parse_rating(self, raw_response: str) -> int:
-        print(f"Got: {raw_response}")
         # Split the raw response into lines
         lines = raw_response.split("\n")
-
-        print(f"len(lines): {len(lines)}")
 
         # First, try to find the structured rating, as this is what
         # is usually returned.
@@ -322,8 +319,6 @@ class TransformPollinatorRating(LenientTask):
                 except ValueError:
                     print(f"Failed to parse: {rating_str}")
                     continue
-
-        print("Didn't find structured")
 
         # Find any matching regexes which can capture the rating.  Try to parse it.
         # As the LLM finds more creative ways to not follow instructions, add to
