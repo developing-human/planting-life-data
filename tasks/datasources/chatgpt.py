@@ -220,8 +220,8 @@ def find_yes_answers(text: str, questions: list[str]) -> list[str]:
     return yes_answers
 
 
-class ExtractPollinatorRating(ChatGptTask):
-    """Prompts ChatGPT for the pollinator rating of a plant.
+class ExtractRating(ChatGptTask):
+    """Prompts ChatGPT for a rating of a plant.
 
     Input: scientific name of plant (genus + species)
     Output: ChatGPT's text response to the prompt
@@ -229,20 +229,12 @@ class ExtractPollinatorRating(ChatGptTask):
 
     scientific_name: str = luigi.Parameter()
 
-    def output(self):
-        return luigi.LocalTarget(
-            f"data/raw/chatgpt/pollinator_rating/{self.scientific_name}.{self.get_model()}.txt"
-        )
+    def get_rating_prompt(self):
+        raise NotImplementedError("Subclasses should implement this!")
 
-    # TODO: Some of this prompt is shared with other ratings.  Could subclass or put in a string.
     def get_prompt(self):
-        return f"""Your goal is to rate {self.scientific_name} compared to other plants 
-with respect to how well it supports pollinators.  To do this, lets think step by step.
-
-First, explain how well it supports the pollinators of an ecosystem.  Consider its 
-contributions as a food source, shelter, and larval host. If it supports specific 
-species, mention them. Also explain how it is deficient, if applicable.
-
+        return f"""{self.get_rating_prompt()}
+        
 Next, compare how well it does compared to other plants. 
 
 Finally, rate how well it supports them on a scale from 
@@ -273,32 +265,53 @@ rating: 3
         return MODEL_GPT_4_TURBO
 
 
-class TransformPollinatorRating(LenientTask):
-    """Parses a plant's pollinator rating from ChatGPT's response.
+class ExtractPollinatorRating(ExtractRating):
+    """Prompts ChatGPT for the pollinator rating of a plant.
+
+    Input: scientific name of plant (genus + species)
+    Output: ChatGPT's text response to the prompt
+    """
+
+    scientific_name: str = luigi.Parameter()
+
+    def output(self):
+        return luigi.LocalTarget(
+            f"data/raw/chatgpt/pollinator_rating/{self.scientific_name}.{self.get_model()}.txt"
+        )
+
+    def get_rating_prompt(self):
+        return f"""Your goal is to rate {self.scientific_name} compared to other plants 
+with respect to how well it supports pollinators.  To do this, lets think step by step.
+
+First, explain how well it supports the pollinators of an ecosystem.  Consider its 
+contributions as a food source, shelter, and larval host. If it supports specific 
+species, mention them. Also explain how it is deficient, if applicable."""
+
+
+class TransformRating(LenientTask):
+    """Parses a plant rating from ChatGPT's response.
 
     Input: scientific name of plant (genus + species)
     Output: A JSON object with:
-        pollinator_rating: an integer between 1 and 10
+        something_rating: an integer between 1 and 10
     """
 
     task_namespace = "chatgpt"  # allows tasks of same name in diff packages
     scientific_name: str = luigi.Parameter()
 
-    def requires(self):
-        return ExtractPollinatorRating(scientific_name=self.scientific_name)
-
-    def output(self):
-        return luigi.LocalTarget(
-            f"data/transformed/chatgpt/pollinator_rating/{self.scientific_name}.json"
-        )
-
     def run_lenient(self):
         with self.input().open("r") as f:
             rating = self.parse_rating(f.read())
-            result = {"rating": rating}
+            rating_field_name = self.get_rating_field_name()
+            result = {rating_field_name: rating}
 
             with self.output().open("w") as f:
                 f.write(json.dumps(result, indent=4))
+
+    def get_rating_field_name(self) -> str:
+        raise NotImplementedError(
+            "get_rating_field_name must be overridden by subclasses"
+        )
 
     def parse_rating(self, raw_response: str) -> int:
         # Split the raw response into lines
@@ -341,3 +354,26 @@ class TransformPollinatorRating(LenientTask):
                     continue
 
         raise ValueError(f"Could not parse rating from response: {raw_response}")
+
+
+class TransformPollinatorRating(TransformRating):
+    """Parses a plant's pollinator rating from ChatGPT's response.
+
+    Input: scientific name of plant (genus + species)
+    Output: A JSON object with:
+        pollinator_rating: an integer between 1 and 10
+    """
+
+    task_namespace = "chatgpt"  # allows tasks of same name in diff packages
+    scientific_name: str = luigi.Parameter()
+
+    def requires(self):
+        return ExtractPollinatorRating(scientific_name=self.scientific_name)
+
+    def output(self):
+        return luigi.LocalTarget(
+            f"data/transformed/chatgpt/pollinator_rating/{self.scientific_name}.json"
+        )
+
+    def get_rating_field_name(self) -> str:
+        return "pollinator_rating"
