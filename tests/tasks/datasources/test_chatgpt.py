@@ -9,8 +9,6 @@ from tasks.lenient import StrictError
 @pytest.fixture
 def rating_task():
     task = TransformPollinatorRating(scientific_name="test_name")
-    # task.input = lambda: MockTarget("input")
-    # task.output = lambda: MockTarget("output")
     return task
 
 
