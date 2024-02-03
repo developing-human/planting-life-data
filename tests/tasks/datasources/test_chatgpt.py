@@ -3,12 +3,19 @@ import luigi
 from luigi.mock import MockTarget
 from tasks.datasources.wildflower import TransformMoisture
 from tasks.datasources.chatgpt import TransformPollinatorRating
+from tasks.datasources.chatgpt import TransformSize
 from tasks.lenient import StrictError
 
 
 @pytest.fixture
 def rating_task():
     task = TransformPollinatorRating(scientific_name="test_name")
+    return task
+
+
+@pytest.fixture
+def size_task():
+    task = TransformSize(scientific_name="test_name")
     return task
 
 
@@ -82,3 +89,44 @@ def test_unlabeled_rating_4(rating_task: TransformPollinatorRating):
 I would rate blah blah as a 6. While it is not...""",
     )
     assert rating == 6
+
+
+def test_size_inches(size_task: TransformSize):
+    size = size_task.parse_size(
+        """Threadleaf coreopsis typically grows to a height of...
+18"-24\""""
+    )
+    assert size == '18"-24"'
+
+
+def test_size_feet(size_task: TransformSize):
+    size = size_task.parse_size(
+        """Threadleaf coreopsis typically grows to a height of...
+2'-3'"""
+    )
+    assert size == "2'-3'"
+
+
+def test_size_whitespace_at_end(size_task: TransformSize):
+    size = size_task.parse_size(
+        """Threadleaf coreopsis typically grows to a height of...
+18"-24"   
+    """
+    )
+    assert size == '18"-24"'
+
+
+def test_size_first_unit_missing(size_task: TransformSize):
+    size = size_task.parse_size(
+        """Threadleaf coreopsis typically grows to a height of...
+18-24\""""
+    )
+    assert size == '18-24"'
+
+
+def test_size_last_unit_missing(size_task: TransformSize):
+    with pytest.raises(ValueError):
+        size_task.parse_size(
+            """Threadleaf coreopsis typically grows to a height of...
+18"-24"""
+        )

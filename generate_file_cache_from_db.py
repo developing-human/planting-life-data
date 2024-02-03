@@ -17,6 +17,8 @@ fields_to_extract = [
     "bird_rating",
     "spread_rating",
     "deer_resistance_rating",
+    "height",
+    "spread",
 ]
 
 base_dir = "data/transformed/chatgpt"
@@ -46,11 +48,19 @@ if __name__ == "__main__":
         scientific_name = row["scientific_name"].lower()
 
         for field in fields_to_extract:
+            field_value = row[field]
+            if field_value == "NULL":
+                continue  # don't save null values
+
             try:
-                # TODO: Revisit this when pulling in height/spread
                 field_value = int(row[field])
             except ValueError:
-                continue  # value wasn't an int (probably "NULL")
+                pass  # keep it as a string if it can't parse as an int
+
+            # width is called spread in the db, this is a janky fix to
+            # account for the difference
+            if field == "spread":
+                field = "width"
 
             file_path = f"{base_dir}/{field}/{scientific_name}.json"
             if os.path.exists(file_path):
