@@ -29,6 +29,7 @@ class GeneratePlantsCsv(luigi.Task):
             "medium_moisture",
             "high_moisture",
             "pollinator_rating",
+            "bird_rating",
             "moisture_source",
             "moisture_source_detail",
             "shade_source",
@@ -48,6 +49,7 @@ class GeneratePlantsCsv(luigi.Task):
                     AggregateMoisture(scientific_name),
                     AggregateShade(scientific_name),
                     chatgpt.TransformPollinatorRating(scientific_name),
+                    chatgpt.TransformBirdRating(scientific_name),
                 ]
 
                 luigi.build(
