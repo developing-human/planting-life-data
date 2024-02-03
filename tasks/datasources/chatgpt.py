@@ -232,55 +232,6 @@ class ExtractRating(ChatGptTask):
         return MODEL_GPT_4_TURBO
 
 
-class ExtractPollinatorRating(ExtractRating):
-    """Prompts ChatGPT for the pollinator rating of a plant.
-
-    Input: scientific name of plant (genus + species)
-    Output: ChatGPT's text response to the prompt
-    """
-
-    scientific_name: str = luigi.Parameter()
-
-    def output(self):
-        return luigi.LocalTarget(
-            f"data/raw/chatgpt/pollinator_rating/{self.scientific_name}.{self.get_model()}.txt"
-        )
-
-    def get_prompt(self):
-        return f"""Your goal is to rate {self.scientific_name} compared to other plants 
-with respect to how well it supports pollinators.  To do this, lets think step by step.
-
-First, explain how well it supports the pollinators of an ecosystem.  Consider its 
-contributions as a food source, shelter, and larval host. If it supports specific 
-species, mention them. Also explain how it is deficient, if applicable.
-        
-Next, compare how well it does compared to other plants. 
-
-Finally, rate how well it supports them on a scale from 
-1-10 compared to other plants.
-
-Your entire response will be formatted as follows, the 
-'rating:' label is REQUIRED:
-```
-Your 2-4 sentence explanation.
-
-Your 2-4 sentence comparison.
-
-rating: Your integer rating from 1-10, compared to other
-plants. 1-3 is average, 4-8 is for strong contributors,
-9-10 is for the very best.
-```
-
-For example (the 'rating:' label is REQUIRED):
-```
-<plant name> are... (2-4 sentences)
-
-Compared to other plants... (2-4 sentences)
-
-rating: 3
-"""
-
-
 class TransformRating(LenientTask):
     """Parses a plant rating from ChatGPT's response.
 
@@ -347,6 +298,55 @@ class TransformRating(LenientTask):
                     continue
 
         raise ValueError(f"Could not parse rating from response: {raw_response}")
+
+
+class ExtractPollinatorRating(ExtractRating):
+    """Prompts ChatGPT for the pollinator rating of a plant.
+
+    Input: scientific name of plant (genus + species)
+    Output: ChatGPT's text response to the prompt
+    """
+
+    scientific_name: str = luigi.Parameter()
+
+    def output(self):
+        return luigi.LocalTarget(
+            f"data/raw/chatgpt/pollinator_rating/{self.scientific_name}.{self.get_model()}.txt"
+        )
+
+    def get_prompt(self):
+        return f"""Your goal is to rate {self.scientific_name} compared to other plants 
+with respect to how well it supports pollinators.  To do this, lets think step by step.
+
+First, explain how well it supports the pollinators of an ecosystem.  Consider its 
+contributions as a food source, shelter, and larval host. If it supports specific 
+species, mention them. Also explain how it is deficient, if applicable.
+        
+Next, compare how well it does compared to other plants. 
+
+Finally, rate how well it supports them on a scale from 
+1-10 compared to other plants.
+
+Your entire response will be formatted as follows, the 
+'rating:' label is REQUIRED:
+```
+Your 2-4 sentence explanation.
+
+Your 2-4 sentence comparison.
+
+rating: Your integer rating from 1-10, compared to other
+plants. 1-3 is average, 4-8 is for strong contributors,
+9-10 is for the very best.
+```
+
+For example (the 'rating:' label is REQUIRED):
+```
+<plant name> are... (2-4 sentences)
+
+Compared to other plants... (2-4 sentences)
+
+rating: 3
+"""
 
 
 class TransformPollinatorRating(TransformRating):
