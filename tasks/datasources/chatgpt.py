@@ -3,7 +3,6 @@ from tasks.lenient import LenientTask
 import json
 import openai
 import re
-from typing import Optional
 
 MODEL_GPT_3_5 = "gpt-3.5-turbo"
 MODEL_GPT_4 = "gpt-4"
@@ -229,11 +228,31 @@ class ExtractRating(ChatGptTask):
 
     scientific_name: str = luigi.Parameter()
 
-    def get_rating_prompt(self):
-        raise NotImplementedError("Subclasses should implement this!")
+    def get_model(self):
+        return MODEL_GPT_4_TURBO
+
+
+class ExtractPollinatorRating(ExtractRating):
+    """Prompts ChatGPT for the pollinator rating of a plant.
+
+    Input: scientific name of plant (genus + species)
+    Output: ChatGPT's text response to the prompt
+    """
+
+    scientific_name: str = luigi.Parameter()
+
+    def output(self):
+        return luigi.LocalTarget(
+            f"data/raw/chatgpt/pollinator_rating/{self.scientific_name}.{self.get_model()}.txt"
+        )
 
     def get_prompt(self):
-        return f"""{self.get_rating_prompt()}
+        return f"""Your goal is to rate {self.scientific_name} compared to other plants 
+with respect to how well it supports pollinators.  To do this, lets think step by step.
+
+First, explain how well it supports the pollinators of an ecosystem.  Consider its 
+contributions as a food source, shelter, and larval host. If it supports specific 
+species, mention them. Also explain how it is deficient, if applicable.
         
 Next, compare how well it does compared to other plants. 
 
@@ -259,33 +278,7 @@ For example (the 'rating:' label is REQUIRED):
 Compared to other plants... (2-4 sentences)
 
 rating: 3
-```"""
-
-    def get_model(self):
-        return MODEL_GPT_4_TURBO
-
-
-class ExtractPollinatorRating(ExtractRating):
-    """Prompts ChatGPT for the pollinator rating of a plant.
-
-    Input: scientific name of plant (genus + species)
-    Output: ChatGPT's text response to the prompt
-    """
-
-    scientific_name: str = luigi.Parameter()
-
-    def output(self):
-        return luigi.LocalTarget(
-            f"data/raw/chatgpt/pollinator_rating/{self.scientific_name}.{self.get_model()}.txt"
-        )
-
-    def get_rating_prompt(self):
-        return f"""Your goal is to rate {self.scientific_name} compared to other plants 
-with respect to how well it supports pollinators.  To do this, lets think step by step.
-
-First, explain how well it supports the pollinators of an ecosystem.  Consider its 
-contributions as a food source, shelter, and larval host. If it supports specific 
-species, mention them. Also explain how it is deficient, if applicable."""
+"""
 
 
 class TransformRating(LenientTask):
