@@ -1,0 +1,6 @@
+scientific_name,common_name,full_shade,part_shade,full_sun,low_moisture,medium_moisture,high_moisture,pollinator_rating,moisture_source,moisture_source_detail,shade_source,shade_source_detail
+Ilex verticillata,Common Winterberry,yes,yes,yes,yes,yes,yes,6,Wildflower,https://www.wildflower.org/plants/result.php?id_plant=ILVE,Wildflower,https://www.wildflower.org/plants/result.php?id_plant=ILVE
+Cephalanthus occidentalis,Common Buttonbush,yes,yes,no,no,yes,yes,7,Wildflower,https://www.wildflower.org/plants/result.php?id_plant=CEOC2,Wildflower,https://www.wildflower.org/plants/result.php?id_plant=CEOC2
+Abelia grandiflora,Glossy Abelia,no,yes,yes,no,yes,no,6,ChatGPT,gpt-4-1106-preview,ChatGPT,gpt-4-1106-preview
+Asclepias syriaca,Common Milkweed,no,no,yes,no,yes,no,8,Wildflower,https://www.wildflower.org/plants/result.php?id_plant=ASSY,Wildflower,https://www.wildflower.org/plants/result.php?id_plant=ASSY
+Lobelia cardinalis,Cardinalflower,yes,yes,yes,no,yes,yes,6,Wildflower,https://www.wildflower.org/plants/result.php?id_plant=LOCA2,Wildflower,https://www.wildflower.org/plants/result.php?id_plant=LOCA2

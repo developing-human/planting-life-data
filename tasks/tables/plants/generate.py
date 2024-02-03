@@ -1,6 +1,7 @@
 import csv
 import json
 import luigi
+import os
 import tasks.datasources.usda as usda
 import tasks.datasources.wildflower as wildflower
 import tasks.datasources.chatgpt as chatgpt
@@ -10,7 +11,9 @@ class GeneratePlantsCsv(luigi.Task):
     plants_filename: str = luigi.Parameter()
 
     def output(self):
-        return luigi.LocalTarget("data/out/plants.csv")
+        filename = os.path.basename(self.plants_filename)
+        filename_no_ext = os.path.splitext(filename)[0]
+        return luigi.LocalTarget(f"data/out/plants-{filename_no_ext}.csv")
 
     # TODO: Solve this differently... causes issues when chaining.
     # def complete(self):
