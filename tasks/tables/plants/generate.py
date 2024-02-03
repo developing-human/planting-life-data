@@ -15,11 +15,6 @@ class GeneratePlantsCsv(luigi.Task):
         filename_no_ext = os.path.splitext(filename)[0]
         return luigi.LocalTarget(f"data/out/plants-{filename_no_ext}.csv")
 
-    # TODO: Solve this differently... causes issues when chaining.
-    # def complete(self):
-    #     # Always run this Task, even if the output file exists
-    #     return False
-
     def run(self):
         with open(self.plants_filename) as plant_file:
             scientific_names = plant_file.read().splitlines()
@@ -84,14 +79,12 @@ class GeneratePlantsSql(luigi.Task):
     plants_filename: str = luigi.Parameter()
 
     def output(self):
-        return luigi.LocalTarget("data/out/plants.sql")
+        filename = os.path.basename(self.plants_filename)
+        filename_no_ext = os.path.splitext(filename)[0]
+        return luigi.LocalTarget(f"data/out/plants-{filename_no_ext}.sql")
 
     def requires(self):
         return GeneratePlantsCsv(plants_filename=self.plants_filename)
-
-    # def complete(self):
-    #     # Always run this Task, even if the output file exists
-    #     return False
 
     def run(self):
         with self.input().open() as plant_csv, self.output().open("w") as out:
