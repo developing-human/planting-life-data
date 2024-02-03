@@ -122,9 +122,21 @@ class GeneratePlantsSql(luigi.Task):
                 )
                 scientific_name = row["scientific_name"]
 
+                # height & width may have ' in them, so escape them
+                height = row["height"].replace("'", "''")
+                width = row["width"].replace("'", "''")
+
                 sql = (
-                    "UPDATE plants "
-                    + f"SET shades = '{shades_str}', moistures = '{moistures_str}' "
+                    "UPDATE plants \n"
+                    + f"SET shades = '{shades_str}',\n"
+                    + f"    moistures = '{moistures_str}',\n"
+                    + f"    height = '{height}',\n"
+                    + f"    spread = '{width}',\n"
+                    # since its subtle... I removed the quotes on these numeric fields
+                    + f"    pollinator_rating = {row['pollinator_rating']},\n"
+                    + f"    bird_rating = {row['bird_rating']},\n"
+                    + f"    spread_rating = {row['spread_rating']},\n"
+                    + f"    deer_resistance_rating = {row['deer_resistance_rating']}\n"  # no comma at end
                     + f"WHERE scientific_name = '{scientific_name}';"
                 )
                 out.write(sql + "\n")
