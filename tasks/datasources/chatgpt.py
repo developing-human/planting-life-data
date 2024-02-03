@@ -307,8 +307,6 @@ class ExtractPollinatorRating(ExtractRating):
     Output: ChatGPT's text response to the prompt
     """
 
-    scientific_name: str = luigi.Parameter()
-
     def output(self):
         return luigi.LocalTarget(
             f"data/raw/chatgpt/pollinator_rating/{self.scientific_name}.{self.get_model()}.txt"
@@ -358,7 +356,6 @@ class TransformPollinatorRating(TransformRating):
     """
 
     task_namespace = "chatgpt"  # allows tasks of same name in diff packages
-    scientific_name: str = luigi.Parameter()
 
     def requires(self):
         return ExtractPollinatorRating(scientific_name=self.scientific_name)
@@ -378,8 +375,6 @@ class ExtractBirdRating(ExtractRating):
     Input: scientific name of plant (genus + species)
     Output: ChatGPT's text response to the prompt
     """
-
-    scientific_name: str = luigi.Parameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -430,7 +425,6 @@ class TransformBirdRating(TransformRating):
     """
 
     task_namespace = "chatgpt"  # allows tasks of same name in diff packages
-    scientific_name: str = luigi.Parameter()
 
     def requires(self):
         return ExtractBirdRating(scientific_name=self.scientific_name)
@@ -450,8 +444,6 @@ class ExtractSpreadRating(ExtractRating):
     Input: scientific name of plant (genus + species)
     Output: ChatGPT's text response to the prompt
     """
-
-    scientific_name: str = luigi.Parameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -491,7 +483,6 @@ class TransformSpreadRating(TransformRating):
     """
 
     task_namespace = "chatgpt"  # allows tasks of same name in diff packages
-    scientific_name: str = luigi.Parameter()
 
     def requires(self):
         return ExtractSpreadRating(scientific_name=self.scientific_name)
@@ -511,8 +502,6 @@ class ExtractDeerResistanceRating(ExtractRating):
     Input: scientific name of plant (genus + species)
     Output: ChatGPT's text response to the prompt
     """
-
-    scientific_name: str = luigi.Parameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -551,7 +540,6 @@ class TransformDeerResistanceRating(TransformRating):
     """
 
     task_namespace = "chatgpt"  # allows tasks of same name in diff packages
-    scientific_name: str = luigi.Parameter()
 
     def requires(self):
         return ExtractDeerResistanceRating(scientific_name=self.scientific_name)
