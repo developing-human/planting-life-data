@@ -442,3 +442,65 @@ class TransformBirdRating(TransformRating):
 
     def get_rating_field_name(self) -> str:
         return "bird_rating"
+
+
+class ExtractSpreadRating(ExtractRating):
+    """Prompts ChatGPT for the spread rating of a plant.
+
+    Input: scientific name of plant (genus + species)
+    Output: ChatGPT's text response to the prompt
+    """
+
+    scientific_name: str = luigi.Parameter()
+
+    def output(self):
+        return luigi.LocalTarget(
+            f"data/raw/chatgpt/spread_rating/{self.scientific_name}.{self.get_model()}.txt"
+        )
+
+    def get_prompt(self):
+        return f"""Your goal is to rate how aggressively {self.scientific_name} 
+spreads.  To do this, lets think step by step.
+
+First, explain how aggressively it spreads.  Then, rate this aggressiveness 
+on a scale from 1 to 10.
+
+Your entire response will be formatted as follows, the rating label is REQUIRED:
+```
+Your 3-5 sentence description.
+
+rating: Your integer rating from 1-10, compared to other plants. 
+1-4 is doesn't spread much, 5-7 is for spreading noticably, 
+8-10 will be very difficult to control.
+```
+
+For example ('rating:' label is REQUIRED):
+```
+<plant name> spreads... (2-4 sentences)
+
+rating: 3
+```
+"""
+
+
+class TransformSpreadRating(TransformRating):
+    """Parses a plant's spread rating from ChatGPT's response.
+
+    Input: scientific name of plant (genus + species)
+    Output: A JSON object with:
+        spread_rating: an integer between 1 and 10
+    """
+
+    task_namespace = "chatgpt"  # allows tasks of same name in diff packages
+    scientific_name: str = luigi.Parameter()
+
+    def requires(self):
+        return ExtractSpreadRating(scientific_name=self.scientific_name)
+
+    def output(self):
+        return luigi.LocalTarget(
+            f"data/transformed/chatgpt/spread_rating/{self.scientific_name}.json"
+        )
+
+    def get_rating_field_name(self) -> str:
+        return "spread_rating"
