@@ -459,18 +459,18 @@ class ExtractSpreadRating(ExtractRating):
         )
 
     def get_prompt(self):
-        return f"""Your goal is to rate how aggressively {self.scientific_name} 
+        return f"""Your goal is to rate how aggressively {self.scientific_name}
 spreads.  To do this, lets think step by step.
 
-First, explain how aggressively it spreads.  Then, rate this aggressiveness 
+First, explain how aggressively it spreads.  Then, rate this aggressiveness
 on a scale from 1 to 10.
 
 Your entire response will be formatted as follows, the rating label is REQUIRED:
 ```
 Your 3-5 sentence description.
 
-rating: Your integer rating from 1-10, compared to other plants. 
-1-4 is doesn't spread much, 5-7 is for spreading noticably, 
+rating: Your integer rating from 1-10, compared to other plants.
+1-4 is doesn't spread much, 5-7 is for spreading noticably,
 8-10 will be very difficult to control.
 ```
 
@@ -479,8 +479,7 @@ For example ('rating:' label is REQUIRED):
 <plant name> spreads... (2-4 sentences)
 
 rating: 3
-```
-"""
+```"""
 
 
 class TransformSpreadRating(TransformRating):
@@ -504,3 +503,63 @@ class TransformSpreadRating(TransformRating):
 
     def get_rating_field_name(self) -> str:
         return "spread_rating"
+
+
+class ExtractDeerResistanceRating(ExtractRating):
+    """Prompts ChatGPT for the deer resistance rating of a plant.
+
+    Input: scientific name of plant (genus + species)
+    Output: ChatGPT's text response to the prompt
+    """
+
+    scientific_name: str = luigi.Parameter()
+
+    def output(self):
+        return luigi.LocalTarget(
+            f"data/raw/chatgpt/deer_resistance_rating/{self.scientific_name}.{self.get_model()}.txt"
+        )
+
+    def get_prompt(self):
+        return f"""Your goal is to rate the deer resistance of {self.scientific_name}.
+To do this, lets think step by step.
+
+First, explain how it resists deer.  Then, rate this resistance on a scale from 1 to 10.
+
+Your entire response will be formatted as follows, the rating label is REQUIRED:
+```
+Your 3-5 sentence description.
+
+rating: Your integer rating from 1-10, compared to other plants. 1-4 is not deer resistant,
+4-6 is not preferred by deer, 7-10 deer will not eat.
+```
+
+For example: ('rating:' label is REQUIRED):
+```
+<plant name> is... (3-5 sentences)
+
+rating: 3
+```
+"""
+
+
+class TransformDeerResistanceRating(TransformRating):
+    """Parses a plant's deer resistance rating from ChatGPT's response.
+
+    Input: scientific name of plant (genus + species)
+    Output: A JSON object with:
+        deer_resistance_rating: an integer between 1 and 10
+    """
+
+    task_namespace = "chatgpt"  # allows tasks of same name in diff packages
+    scientific_name: str = luigi.Parameter()
+
+    def requires(self):
+        return ExtractDeerResistanceRating(scientific_name=self.scientific_name)
+
+    def output(self):
+        return luigi.LocalTarget(
+            f"data/transformed/chatgpt/deer_resistance_rating/{self.scientific_name}.json"
+        )
+
+    def get_rating_field_name(self) -> str:
+        return "deer_resistance_rating"
