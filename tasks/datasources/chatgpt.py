@@ -694,3 +694,78 @@ class TransformWidth(TransformSize):
 
     def get_size_field_name(self) -> str:
         return "width"
+
+
+class ExtractBloom(ChatGptTask):
+    """Prompts ChatGPT for the blooming season of a plant.
+
+    Input: scientific name of plant (genus + species)
+    Output: ChatGPT's text response to the prompt
+    """
+
+    scientific_name: str = luigi.Parameter()
+
+    def output(self):
+        return luigi.LocalTarget(
+            f"data/raw/chatgpt/bloom/{self.scientific_name}.{self.get_model()}.txt"
+        )
+
+    def get_prompt(self):
+        return f"""In what season does {self.scientific_name} typically start blooming?
+Choose one of: early spring, spring, late spring, early summer, summer, late summer,
+early fall, fall, or late fall.  If it does not bloom, say 'does not bloom'."""
+
+    def get_model(self):
+        return MODEL_GPT_4_TURBO
+
+
+class TransformBloom(LenientTask):
+    """Parses a plant blooming season from ChatGPT's response.
+
+    Input: scientific name of plant (genus + species)
+    Output: A JSON object with:
+        bloom: a string representing the size
+    """
+
+    task_namespace = "chatgpt"  # allows tasks of same name in diff packages
+    scientific_name: str = luigi.Parameter()
+
+    def requires(self):
+        return ExtractBloom(scientific_name=self.scientific_name)
+
+    def output(self):
+        return luigi.LocalTarget(
+            f"data/transformed/chatgpt/bloom/{self.scientific_name}.json"
+        )
+
+    def run_lenient(self):
+        with self.input().open("r") as f:
+            size = self.parse_bloom(f.read())
+            result = {"bloom": size}
+
+            with self.output().open("w") as f:
+                f.write(json.dumps(result, indent=4))
+
+    def parse_bloom(self, raw_response: str) -> int:
+        seasons = [
+            "early spring",
+            "late spring",
+            "spring",
+            "early summer",
+            "late summer",
+            "summer",
+            "early fall",
+            "late fall",
+            "fall",
+            "early autumn",
+            "late autumn",
+            "autumn",
+            "does not bloom",
+        ]
+
+        input_lc = raw_response.lower()
+        for season in seasons:
+            if season in input_lc:
+                return season.replace("autumn", "fall").replace("does not bloom", "N/A")
+
+        raise ValueError(f"could not find season in: {raw_response}")

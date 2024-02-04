@@ -1,10 +1,7 @@
 import pytest
-import luigi
-from luigi.mock import MockTarget
-from tasks.datasources.wildflower import TransformMoisture
 from tasks.datasources.chatgpt import TransformPollinatorRating
 from tasks.datasources.chatgpt import TransformSize
-from tasks.lenient import StrictError
+from tasks.datasources.chatgpt import TransformBloom
 
 
 @pytest.fixture
@@ -16,6 +13,12 @@ def rating_task():
 @pytest.fixture
 def size_task():
     task = TransformSize(scientific_name="test_name")
+    return task
+
+
+@pytest.fixture
+def bloom_task():
+    task = TransformBloom(scientific_name="test_name")
     return task
 
 
@@ -129,4 +132,35 @@ def test_size_last_unit_missing(size_task: TransformSize):
         size_task.parse_size(
             """Threadleaf coreopsis typically grows to a height of...
 18"-24"""
+        )
+
+
+def test_bloom_check_every_expected_season(bloom_task: TransformBloom):
+    tests = {
+        "early spring": "early spring",
+        "late spring": "late spring",
+        "spring": "spring",
+        "early summer": "early summer",
+        "late summer": "late summer",
+        "summer": "summer",
+        "early fall": "early fall",
+        "late fall": "late fall",
+        "fall": "fall",
+        "early autumn": "early fall",
+        "late autumn": "late fall",
+        "autumn": "fall",
+        "does not bloom": "N/A",
+    }
+
+    for season_in, season_out in tests.items():
+        bloom = bloom_task.parse_bloom(
+            f"Threadleaf coreopsis typically blooms in {season_in}"
+        )
+        assert bloom == season_out
+
+
+def test_bloom_no_expected_season(bloom_task: TransformBloom):
+    with pytest.raises(ValueError):
+        bloom_task.parse_bloom(
+            "Threadleaf coreopsis typically blooms during the apocalypse"
         )

@@ -19,6 +19,7 @@ fields_to_extract = [
     "deer_resistance_rating",
     "height",
     "spread",
+    "bloom",
 ]
 
 base_dir = "data/transformed/chatgpt"
