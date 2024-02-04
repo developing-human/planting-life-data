@@ -24,8 +24,13 @@ class LenientTask(luigi.Task):
             )
             logging.debug(traceback.format_exc())
 
-            # Write blank to each output (may be one output or list)
-            outputs = self.output() if type(self.output()) is list else [self.output()]
+            # output may be one item or a list.  convert to list.
+            outputs = self.output()
+            if not isinstance(outputs, list):
+                outputs = [outputs]
+
+            # write blank to each output
+            # not writing causes downstream tasks to fail
             for output in outputs:
                 with output.open("w") as _:
                     pass
