@@ -54,7 +54,7 @@ class ExtractHeight(ChatGptTask):
             f"data/raw/chatgpt/height/{self.scientific_name}.{self.get_model()}.txt"
         )
 
-    def get_prompt(self):
+    def get_prompt(self) -> str:
         return f"""How tall is {self.scientific_name}?  On the last line of your response, 
 list only feet and inches using ' and \" for abbreviations.  Here are two examples:
 
@@ -68,7 +68,7 @@ list only feet and inches using ' and \" for abbreviations.  Here are two exampl
 18\"-24\"
 ```"""
 
-    def get_model(self):
+    def get_model(self) -> str:
         return MODEL_GPT_4_TURBO
 
 
@@ -122,7 +122,7 @@ list only feet and inches using ' and \" for abbreviations.  Here are two exampl
 18\"-24\"
 ```"""
 
-    def get_model(self):
+    def get_model(self) -> str:
         return MODEL_GPT_4_TURBO
 
 
@@ -162,12 +162,12 @@ class ExtractBloom(ChatGptTask):
             f"data/raw/chatgpt/bloom/{self.scientific_name}.{self.get_model()}.txt"
         )
 
-    def get_prompt(self):
+    def get_prompt(self) -> str:
         return f"""In what season does {self.scientific_name} typically start blooming?
 Choose one of: early spring, spring, late spring, early summer, summer, late summer,
 early fall, fall, or late fall.  If it does not bloom, say 'does not bloom'."""
 
-    def get_model(self):
+    def get_model(self) -> str:
         return MODEL_GPT_4_TURBO
 
 

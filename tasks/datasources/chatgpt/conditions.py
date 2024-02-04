@@ -19,7 +19,7 @@ class ExtractGrowingConditions(ChatGptTask):
             f"data/raw/chatgpt/conditions/{self.scientific_name}.{self.get_model()}.txt"
         )
 
-    def get_prompt(self):
+    def get_prompt(self) -> str:
         return f"""Your goal is to answer six yes/no questions about shade
 and moisture conditions where {self.scientific_name} will thrive.  First, describe
 growing conditions where it will thrive in 40-50 words.
@@ -45,7 +45,7 @@ For example:
 ```
 """
 
-    def get_model(self):
+    def get_model(self) -> str:
         return MODEL_GPT_4_TURBO
 
 

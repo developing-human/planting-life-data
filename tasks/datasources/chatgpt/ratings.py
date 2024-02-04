@@ -98,7 +98,7 @@ class ExtractPollinatorRating(ExtractRating):
             f"data/raw/chatgpt/pollinator_rating/{self.scientific_name}.{self.get_model()}.txt"
         )
 
-    def get_prompt(self):
+    def get_prompt(self) -> str:
         return f"""Your goal is to rate {self.scientific_name} compared to other plants 
 with respect to how well it supports pollinators.  To do this, lets think step by step.
 
@@ -167,7 +167,7 @@ class ExtractBirdRating(ExtractRating):
             f"data/raw/chatgpt/bird_rating/{self.scientific_name}.{self.get_model()}.txt"
         )
 
-    def get_prompt(self):
+    def get_prompt(self) -> str:
         return f"""Your goal is to rate {self.scientific_name} compared to other plants
 with respect to how well it supports birds.  To do this, lets think step by step.
 
@@ -236,7 +236,7 @@ class ExtractSpreadRating(ExtractRating):
             f"data/raw/chatgpt/spread_rating/{self.scientific_name}.{self.get_model()}.txt"
         )
 
-    def get_prompt(self):
+    def get_prompt(self) -> str:
         return f"""Your goal is to rate how aggressively {self.scientific_name}
 spreads.  To do this, lets think step by step.
 
@@ -294,7 +294,7 @@ class ExtractDeerResistanceRating(ExtractRating):
             f"data/raw/chatgpt/deer_resistance_rating/{self.scientific_name}.{self.get_model()}.txt"
         )
 
-    def get_prompt(self):
+    def get_prompt(self) -> str:
         return f"""Your goal is to rate the deer resistance of {self.scientific_name}.
 To do this, lets think step by step.
 
