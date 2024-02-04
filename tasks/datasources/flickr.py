@@ -7,8 +7,9 @@ from tasks.datasources.usda import TransformCommonName
 
 
 class ExtractFlickrSearchResults(luigi.Task):
-    """Searches Flickr for the given search term.  Returns a list
-    of photos with details like: license, author, title, description."""
+    """Searches Flickr for the given search term.  Returns a Flickr's
+    raw response from photo search, which contains details like:
+    license, author, title, description, size, url."""
 
     search_term: str = luigi.Parameter()
 
@@ -46,6 +47,101 @@ class ExtractFlickrSearchResults(luigi.Task):
             f.write(pretty_json)
 
 
+class TransformValidFlickrImages(luigi.Task):
+    """Transforms Flickr's raw result into a list of photos into a simplified
+    model with only the fields that are needed.  Discards invalid data."""
+
+    search_term: str = luigi.Parameter()
+
+    def requires(self):
+        return ExtractFlickrSearchResults(search_term=self.search_term)
+
+    def output(self):
+        # Sanitize by converting to lowercase, swapping spaces for hyphens,
+        # and only keeping letters/hyphens
+        sanitized = self.search_term.lower().replace(" ", "-")
+        sanitized = "".join(ch for ch in sanitized if ch.isalpha() or ch == "-")
+
+        return luigi.LocalTarget(f"data/transformed/flickr-sanitized/{sanitized}.json")
+
+    def run(self):
+        with self.input().open("r") as flickr_result:
+            flickr_result_json = json.loads(flickr_result.read())
+
+        # Extract the useful parts from loaded json to prevent dealing with
+        # this while filtering/prioritizing
+        photos = flickr_result_json.get("photos", {}).get("photo", [])
+
+        filtered = self._filter_to_valid_photos(photos)
+
+        transformed = [self._transform_flickr_photo(img) for img in filtered]
+
+        with self.output().open("w") as f:
+            f.write(json.dumps(transformed, indent=4))
+
+    def _filter_to_valid_photos(self, photos: list[dict]) -> list[dict]:
+        valid_photos = []
+
+        for photo in photos:
+            if not photo.get("url_z"):
+                print("Invalid photo: missing url_z")
+                continue  # url_z points to the sized photo to use
+
+            try:
+                int(photo["views"])
+            except ValueError:
+                print("Invalid photo: views not an int")
+                continue  # views must be an integer
+
+            blocked_photo_ids = [
+                "37831198204",  # educational drawing of carex crinita
+                "17332010645",  # field of apparently dead goldenrod?
+                "43826520262",  # too close up of wild ginger
+                "41085999240",  # too close up of wild ginger
+                "26596674001",  # too close up of wild ginger
+                "37356079394",  # too close up of black eyed susan
+            ]
+            if photo.get("id") in blocked_photo_ids:
+                print("Invalid photo: blocked id")
+                continue  # filter out blocked photos
+
+            title = photo.get("title", "")
+            if self._has_blocked_word(title):
+                print("Invalid photo: blocked word in title")
+                continue
+
+            description = photo.get("description", {}).get("_content", "")
+            if self._has_blocked_word(description):
+                print("Invalid photo: blocked word in description")
+                continue
+
+            valid_photos.append(photo)
+
+        return valid_photos
+
+    def _has_blocked_word(self, text: str) -> bool:
+        blocked_words = [
+            "drawn",
+            "illustration",
+            "dried wildflowers",
+            "illustrated",
+        ]
+
+        return any(word in text.lower() for word in blocked_words)
+
+    def _transform_flickr_photo(self, photo: dict) -> dict:
+        return {
+            "title": photo["title"],
+            "description": photo.get("description", {}).get("_content", ""),
+            "author": photo.get("ownername", ""),
+            "views": int(photo.get("views", "0")),
+            "original_url": f"https://www.flickr.com/photos/{photo['owner']}/{photo['id']}",
+            "resized_url": photo.get("url_z"),
+            "height": photo.get("height_z"),
+            "width": photo.get("width_z"),
+        }
+
+
 class TransformBestFlickrImage(luigi.Task):
     scientific_name: str = luigi.Parameter()
 
@@ -53,8 +149,8 @@ class TransformBestFlickrImage(luigi.Task):
         blooming_search_term = f"{self.scientific_name} blooming"
         non_blooming_search_term = self.scientific_name
         return [
-            ExtractFlickrSearchResults(search_term=blooming_search_term),
-            ExtractFlickrSearchResults(search_term=non_blooming_search_term),
+            TransformValidFlickrImages(search_term=blooming_search_term),
+            TransformValidFlickrImages(search_term=non_blooming_search_term),
             TransformCommonName(scientific_name=self.scientific_name),
         ]
 
@@ -74,17 +170,13 @@ class TransformBestFlickrImage(luigi.Task):
 
         # Extract the useful parts from loaded json to prevent dealing with
         # this while filtering/prioritizing
-        blooming_images = blooming_json["photos"]["photo"]
-        non_blooming_images = non_blooming_json["photos"]["photo"]
+        # blooming_images = blooming_json["photos"]["photo"]
+        # non_blooming_images = non_blooming_json["photos"]["photo"]
         common_name_str = common_name_json["common_name"]
 
         best_image = self._find_best_overall_image(
-            blooming_images, non_blooming_images, common_name_str
+            blooming_json, non_blooming_json, common_name_str
         )
-
-        # TODO: I have the flickr image - I need to turn it into just the
-        #       fields I want to put in the csv.  I think that will be a
-        #       separate Task.
 
         # TODO: Is it ok to not write anything if no results?
         #       I think this will fail the run, and I think that's ok.
@@ -108,63 +200,12 @@ class TransformBestFlickrImage(luigi.Task):
         return None
 
     def _find_best_image(self, images: list[dict], common_name: str) -> dict | None:
-        valid_images = self._filter_to_valid_images(images)
-        if not valid_images:
+        if not images:
             return None
 
-        prioritized_images = self._prioritize_images(valid_images, common_name)
+        prioritized_images = self._prioritize_images(images, common_name)
 
         return prioritized_images[0]
-
-    def _filter_to_valid_images(self, images: list[dict]) -> list[dict]:
-        valid_images = []
-
-        for image in images:
-            if not image.get("url_z"):
-                print("Invalid image: missing url_z")
-                continue  # url_z points to the sized image to use
-
-            try:
-                int(image["views"])
-            except ValueError:
-                print("Invalid image: views not an int")
-                continue  # views must be an integer
-
-            blocked_image_ids = [
-                "37831198204",  # educational drawing of carex crinita
-                "17332010645",  # field of apparently dead goldenrod?
-                "43826520262",  # too close up of wild ginger
-                "41085999240",  # too close up of wild ginger
-                "26596674001",  # too close up of wild ginger
-                "37356079394",  # too close up of black eyed susan
-            ]
-            if image.get("id") in blocked_image_ids:
-                print("Invalid image: blocked id")
-                continue  # filter out blocked images
-
-            title = image.get("title", "")
-            if self._has_blocked_word(title):
-                print("Invalid image: blocked word in title")
-                continue
-
-            description = image.get("description", {}).get("_content", "")
-            if self._has_blocked_word(description):
-                print("Invalid image: blocked word in description")
-                continue
-
-            valid_images.append(image)
-
-        return valid_images
-
-    def _has_blocked_word(self, text: str) -> bool:
-        blocked_words = [
-            "drawn",
-            "illustration",
-            "dried wildflowers",
-            "illustrated",
-        ]
-
-        return any(word in text.lower() for word in blocked_words)
 
     def _prioritize_images(self, images: list[dict], common_name: str) -> list[dict]:
         scientific_name_lc = self.scientific_name.lower()
@@ -175,14 +216,14 @@ class TransformBestFlickrImage(luigi.Task):
             return scientific_name_lc in title_lc or common_name_lc in title_lc
 
         def is_landscape(image: dict) -> bool:
-            return image["width_z"] > image["height_z"]
+            return image["width"] > image["height"]
 
         sorted_images = sorted(
             images,
             key=lambda img: (
                 has_name(img),
                 is_landscape(img),
-                int(img["views"]),
+                img["views"],
             ),
             reverse=True,
         )
