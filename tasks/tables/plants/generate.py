@@ -134,6 +134,7 @@ class GeneratePlantsSql(luigi.Task):
                     + f"    moistures = '{moistures_str}',\n"
                     + f"    height = '{height}',\n"
                     + f"    spread = '{width}',\n"
+                    + f"    bloom = '{row['bloom']}',\n"
                     # since its subtle... I removed the quotes on these numeric fields
                     + f"    pollinator_rating = {row['pollinator_rating']},\n"
                     + f"    bird_rating = {row['bird_rating']},\n"
