@@ -142,70 +142,39 @@ class TransformValidFlickrImages(luigi.Task):
         }
 
 
-class TransformBestFlickrImage(luigi.Task):
+class TransformPrioritizedFlickrImages(luigi.Task):
+    """Prioritizes the result of TransformValidFlickrImages, best is first."""
+
     scientific_name: str = luigi.Parameter()
+    search_term: str = luigi.Parameter()
 
     def requires(self):
-        blooming_search_term = f"{self.scientific_name} blooming"
-        non_blooming_search_term = self.scientific_name
         return [
-            TransformValidFlickrImages(search_term=blooming_search_term),
-            TransformValidFlickrImages(search_term=non_blooming_search_term),
+            TransformValidFlickrImages(search_term=self.search_term),
             TransformCommonName(scientific_name=self.scientific_name),
         ]
 
     def output(self):
+        # Sanitize by converting to lowercase, swapping spaces for hyphens,
+        # and only keeping letters/hyphens
+        sanitized = self.search_term.lower().replace(" ", "-")
+        sanitized = "".join(ch for ch in sanitized if ch.isalpha() or ch == "-")
+
         return luigi.LocalTarget(
-            f"data/transformed/flickr/image/{self.scientific_name}.json"
+            f"data/transformed/flickr-prioritized/{sanitized}.json"
         )
 
     def run(self):
         inputs = self.input()
-        with inputs[0].open("r") as blooming:
-            with inputs[1].open("r") as non_blooming:
-                with inputs[2].open("r") as common_name:
-                    blooming_json = json.loads(blooming.read())
-                    non_blooming_json = json.loads(non_blooming.read())
-                    common_name_json = json.loads(common_name.read())
+        with inputs[0].open("r") as images, inputs[1].open("r") as common_name:
+            images_json = json.loads(images.read())
+            common_name_json = json.loads(common_name.read())
 
-        # Extract the useful parts from loaded json to prevent dealing with
-        # this while filtering/prioritizing
-        # blooming_images = blooming_json["photos"]["photo"]
-        # non_blooming_images = non_blooming_json["photos"]["photo"]
         common_name_str = common_name_json["common_name"]
+        prioritized = self._prioritize_images(images_json, common_name_str)
 
-        best_image = self._find_best_overall_image(
-            blooming_json, non_blooming_json, common_name_str
-        )
-
-        # TODO: Is it ok to not write anything if no results?
-        #       I think this will fail the run, and I think that's ok.
-        if best_image:
-            with self.output().open("w") as f:
-                f.write(json.dumps(best_image, indent=4))
-
-    def _find_best_overall_image(
-        self, blooming: list[dict], non_blooming: list[dict], common_name: str
-    ) -> dict | None:
-        """Looks through both search results and finds the "best" image."""
-
-        best_blooming = self._find_best_image(blooming, common_name)
-        if best_blooming:
-            return best_blooming
-
-        best_non_blooming = self._find_best_image(non_blooming, common_name)
-        if best_non_blooming:
-            return best_non_blooming
-
-        return None
-
-    def _find_best_image(self, images: list[dict], common_name: str) -> dict | None:
-        if not images:
-            return None
-
-        prioritized_images = self._prioritize_images(images, common_name)
-
-        return prioritized_images[0]
+        with self.output().open("w") as f:
+            f.write(json.dumps(prioritized, indent=4))
 
     def _prioritize_images(self, images: list[dict], common_name: str) -> list[dict]:
         scientific_name_lc = self.scientific_name.lower()
@@ -229,3 +198,46 @@ class TransformBestFlickrImage(luigi.Task):
         )
 
         return sorted_images
+
+
+class TransformBestFlickrImage(luigi.Task):
+    """Looks at both blooming & non-blooming results to choose the best image"""
+
+    scientific_name: str = luigi.Parameter()
+
+    def requires(self):
+        blooming_search_term = f"{self.scientific_name} blooming"
+        non_blooming_search_term = self.scientific_name
+        return [
+            TransformPrioritizedFlickrImages(
+                scientific_name=self.scientific_name, search_term=blooming_search_term
+            ),
+            TransformPrioritizedFlickrImages(
+                scientific_name=self.scientific_name,
+                search_term=non_blooming_search_term,
+            ),
+        ]
+
+    def output(self):
+        return luigi.LocalTarget(
+            f"data/transformed/flickr/image/{self.scientific_name}.json"
+        )
+
+    def run(self):
+        inputs = self.input()
+        with inputs[0].open("r") as blooming:
+            with inputs[1].open("r") as non_blooming:
+                blooming_json = json.loads(blooming.read())
+                non_blooming_json = json.loads(non_blooming.read())
+
+        # use best blooming image, or best non_blooming if no blooming available.
+        if blooming_json:
+            best_image = blooming_json[0]
+        elif non_blooming_json:
+            best_image = non_blooming_json[0]
+
+        # TODO: Is it ok to not write anything if no results?
+        #       I think this will fail the run, and I think that's ok.
+        if best_image:
+            with self.output().open("w") as f:
+                f.write(json.dumps(best_image, indent=4))
