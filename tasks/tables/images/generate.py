@@ -60,3 +60,43 @@ class GenerateImagesCsv(luigi.Task):
                     csv_out.writerow(row_out)
                 else:
                     print(f"Missing data, skipping row for {scientific_name}")
+
+
+class GenerateImagesSql(luigi.Task):
+    plants_filename: str = luigi.Parameter()
+
+    def output(self):
+        filename = os.path.basename(self.plants_filename)
+        filename_no_ext = os.path.splitext(filename)[0]
+        return luigi.LocalTarget(f"data/out/images-{filename_no_ext}.sql")
+
+    def requires(self):
+        return GenerateImagesCsv(plants_filename=self.plants_filename)
+
+    def run(self):
+        with self.input().open() as plant_csv, self.output().open("w") as out:
+            reader = csv.DictReader(plant_csv)
+
+            for row in reader:
+                scientific_name = row["scientific_name"]
+                title = row["title"].replace("'", "''")
+
+                select_image_id_sql = (
+                    "SELECT image_id "
+                    + "FROM plants "
+                    + f"WHERE scientific_name = '{scientific_name}'"
+                )
+
+                # TODO: This SQL will update existing images, but not insert new ones
+                #       I think once I flip the relationship so images point to plants
+                #       I'll be able to issue deletes/inserts easier.
+                sql = (
+                    "UPDATE images \n"
+                    + f"SET title = '{title}',\n"
+                    + f"    author = '{row['author']}',\n"
+                    + f"    license = '{row['license']}',\n"
+                    + f"    original_url = '{row['original_url']}',\n"
+                    + f"    card_url = '{row['card_url']}'\n"
+                    + f"WHERE id = ({select_image_id_sql});"
+                )
+                out.write(sql + "\n")
