@@ -56,4 +56,7 @@ class GenerateImagesCsv(luigi.Task):
                 # in the csv, so filter the row to just the expected fields
                 row_out = {key: row_out[key] for key in row_out if key in fields}
 
-                csv_out.writerow(row_out)
+                if len(row_out) == len(fields):
+                    csv_out.writerow(row_out)
+                else:
+                    print(f"Missing data, skipping row for {scientific_name}")

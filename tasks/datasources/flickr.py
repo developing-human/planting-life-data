@@ -256,12 +256,11 @@ class TransformBestFlickrImage(luigi.Task):
             best_image = blooming_json[0]
         elif non_blooming_json:
             best_image = non_blooming_json[0]
+        else:
+            best_image = {}
 
-        # TODO: Is it ok to not write anything if no results?
-        #       I think this will fail the run, and I think that's ok.
-        if best_image:
-            with self.output().open("w") as f:
-                f.write(json.dumps(best_image, indent=4))
+        with self.output().open("w") as f:
+            f.write(json.dumps(best_image, indent=4))
 
 
 def _sanitize_search_term(search_term: str) -> str:
