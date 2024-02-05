@@ -120,6 +120,12 @@ class TransformValidFlickrImages(luigi.Task):
                 "41085999240",  # too close up of wild ginger
                 "26596674001",  # too close up of wild ginger
                 "37356079394",  # too close up of black eyed susan
+                "49917674616",  # golden alexander with phone in picture
+                "24738509536",  # golden alexander too close
+                "17407890002",  # golden alexander weird angle
+                "48332372337",  # golden alexander too close
+                "48332359132",  # golden alexander too close
+                "32145508650",  # just seeds from prairie dropseed
             ]
             if photo.get("id") in blocked_photo_ids:
                 print("Skipping invalid photo: blocked id")
