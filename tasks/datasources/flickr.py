@@ -2,6 +2,7 @@ import json
 import luigi
 import os
 import requests
+import time
 from tasks.datasources.usda import TransformCommonName
 
 
@@ -40,9 +41,26 @@ class ExtractFlickrSearchResults(luigi.Task):
             "https://api.flickr.com/services/rest", params=params, timeout=5
         )
 
+        # Throttle, to prevent spamming their service
+        time.sleep(2)
+
         with self.output().open("w") as f:
             pretty_json = json.dumps(json.loads(response.text), indent=4)
             f.write(pretty_json)
+
+
+LICENSE_ID_TO_NAME = {
+    "1": "CC BY-NC-SA 2.0",
+    "2": "CC BY-NC 2.0",
+    "3": "CC BY-NC-ND 2.0",
+    "4": "CC BY 2.0",
+    "5": "CC BY-SA 2.0",
+    "6": "CC BY-ND 2.0",
+    "7": "No known copyright restrictions",
+    "8": "US Government Work",
+    "9": "CC0",
+    "10": "Public Domain Mark 1.0",
+}
 
 
 class TransformValidFlickrImages(luigi.Task):
@@ -81,13 +99,13 @@ class TransformValidFlickrImages(luigi.Task):
 
         for photo in photos:
             if not photo.get("url_z"):
-                print("Invalid photo: missing url_z")
+                print("Skipping invalid photo: missing url_z")
                 continue  # url_z points to the sized photo to use
 
             try:
                 int(photo["views"])
             except ValueError:
-                print("Invalid photo: views not an int")
+                print("Skipping invalid photo: views not an int")
                 continue  # views must be an integer
 
             blocked_photo_ids = [
@@ -99,17 +117,17 @@ class TransformValidFlickrImages(luigi.Task):
                 "37356079394",  # too close up of black eyed susan
             ]
             if photo.get("id") in blocked_photo_ids:
-                print("Invalid photo: blocked id")
+                print("Skipping invalid photo: blocked id")
                 continue  # filter out blocked photos
 
             title = photo.get("title", "")
             if self._has_blocked_word(title):
-                print("Invalid photo: blocked word in title")
+                print("Skipping invalid photo: blocked word in title")
                 continue
 
             description = photo.get("description", {}).get("_content", "")
             if self._has_blocked_word(description):
-                print("Invalid photo: blocked word in description")
+                print("Skipping invalid photo: blocked word in description")
                 continue
 
             valid_photos.append(photo)
@@ -133,9 +151,11 @@ class TransformValidFlickrImages(luigi.Task):
             "author": photo.get("ownername", ""),
             "views": int(photo.get("views", "0")),
             "original_url": f"https://www.flickr.com/photos/{photo['owner']}/{photo['id']}",
-            "resized_url": photo.get("url_z"),
+            "card_url": photo.get("url_z"),
             "height": photo.get("height_z"),
             "width": photo.get("width_z"),
+            # fails if missing/unexpected license
+            "license": LICENSE_ID_TO_NAME[photo["license"]],
         }
 
 
