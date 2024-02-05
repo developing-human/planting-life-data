@@ -15,8 +15,7 @@ class ExtractFlickrSearchResults(luigi.Task):
     def output(self):
         # Sanitize by converting to lowercase, swapping spaces for hyphens,
         # and only keeping letters/hyphens
-        sanitized = self.search_term.lower().replace(" ", "-")
-        sanitized = "".join(ch for ch in sanitized if ch.isalpha() or ch == "-")
+        sanitized = _sanitize_search_term(self.search_term)
 
         return luigi.LocalTarget(f"data/raw/flickr/{sanitized}.json")
 
@@ -58,8 +57,7 @@ class TransformValidFlickrImages(luigi.Task):
     def output(self):
         # Sanitize by converting to lowercase, swapping spaces for hyphens,
         # and only keeping letters/hyphens
-        sanitized = self.search_term.lower().replace(" ", "-")
-        sanitized = "".join(ch for ch in sanitized if ch.isalpha() or ch == "-")
+        sanitized = _sanitize_search_term(self.search_term)
 
         return luigi.LocalTarget(f"data/transformed/flickr-sanitized/{sanitized}.json")
 
@@ -156,8 +154,7 @@ class TransformPrioritizedFlickrImages(luigi.Task):
     def output(self):
         # Sanitize by converting to lowercase, swapping spaces for hyphens,
         # and only keeping letters/hyphens
-        sanitized = self.search_term.lower().replace(" ", "-")
-        sanitized = "".join(ch for ch in sanitized if ch.isalpha() or ch == "-")
+        sanitized = _sanitize_search_term(self.search_term)
 
         return luigi.LocalTarget(
             f"data/transformed/flickr-prioritized/{sanitized}.json"
@@ -240,3 +237,12 @@ class TransformBestFlickrImage(luigi.Task):
         if best_image:
             with self.output().open("w") as f:
                 f.write(json.dumps(best_image, indent=4))
+
+
+def _sanitize_search_term(search_term: str) -> str:
+    "Given a search term, sanitizes it so it can be used in a filename"
+
+    sanitized = search_term.lower().replace(" ", "-")
+    sanitized = "".join(ch for ch in sanitized if ch.isalpha() or ch == "-")
+
+    return sanitized
