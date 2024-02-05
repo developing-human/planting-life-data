@@ -2,8 +2,9 @@ import json
 import luigi
 import os
 import requests
-import time
 from tasks.datasources.usda import TransformCommonName
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
 
 class ExtractFlickrSearchResults(luigi.Task):
@@ -37,12 +38,16 @@ class ExtractFlickrSearchResults(luigi.Task):
             "license": "1,2,3,4,5,6,7,8,9,10",
         }
 
-        response = requests.get(
-            "https://api.flickr.com/services/rest", params=params, timeout=5
+        retries = Retry(
+            total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504]
         )
 
-        # Throttle, to prevent spamming their service
-        time.sleep(2)
+        session = requests.Session()
+        session.mount("https://api.flickr.com", HTTPAdapter(max_retries=retries))
+
+        response = session.get(
+            "https://api.flickr.com/services/rest", params=params, timeout=2
+        )
 
         with self.output().open("w") as f:
             pretty_json = json.dumps(json.loads(response.text), indent=4)
