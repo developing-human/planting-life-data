@@ -39,22 +39,29 @@ def load_image(url: str) -> Image:
     response = requests.get(url)
     img = Image.open(BytesIO(response.content))
 
-    # Determine the longest side of the image
     if img.width > img.height:
+        # landscape
+        # start at middle width wise, and subtract half the height
+        # to get an img.height width square
+        left = img.width / 2 - img.height / 2
+        right = img.width / 2 + img.height / 2
+        top = 0
+        bottom = img.height
+
         longest_side = img.width
     else:
-        longest_side = img.height
-
-    # Compute the new dimensions
-    new_dimensions = (
-        IMG_SIZE,
-        int(round((IMG_SIZE / longest_side) * float(longest_side))),
-    )
+        # portrait
+        left = 0
+        right = img.width
+        top = img.height / 2 - img.width / 2
+        bottom = img.height / 2 + img.width / 2
+        
+    cropped = img.crop((left, top, right, bottom))
 
     # Resize the image
-    img.thumbnail(new_dimensions)
+    cropped.thumbnail((IMG_SIZE, IMG_SIZE))
 
-    return img
+    return cropped
 
 
 def load_images_from_urls(urls: list[str]) -> list[Image]:
