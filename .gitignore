@@ -5,3 +5,4 @@ data/transformed
 data/aggregated
 data/out/*.sql
 .DS_Store
+diffs/*.csv
