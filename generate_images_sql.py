@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 import luigi
-from tasks.tables.images.generate import GenerateImagesSql
+from tasks.tables.images.generate import GenerateImagesSql, GenerateImagesCsv, GenerateImagesWithoutHumanOverridesCsv
 
 logging.getLogger().setLevel(logging.WARN)
 
@@ -11,13 +11,23 @@ if __name__ == "__main__":
         print(f"Usage: python3 {sys.argv[0]} plants_list.txt")
         exit(1)
 
-    task = GenerateImagesSql(plants_filename=sys.argv[1])
+    plants_filename = sys.argv[1]
 
-    # Remove output file before generating
+    # Remove output files from these tasks before generating
     # Always want fresh results when using script
-    path = task.output().path
-    if os.path.exists(path):
-        os.remove(path)
+    tasks_to_clear = [
+        GenerateImagesSql(plants_filename=plants_filename),
+        GenerateImagesWithoutHumanOverridesCsv(plants_filename=plants_filename),
+        GenerateImagesCsv(plants_filename=plants_filename),
+    ]
+
+    for task in tasks_to_clear:
+        path = task.output().path
+        if os.path.exists(path):
+            os.remove(path)
+
+    task = GenerateImagesSql(plants_filename=plants_filename)
+
 
     result = luigi.build(
         [task],

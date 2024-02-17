@@ -6,6 +6,7 @@ import logging
 import csv
 import json
 import os
+import pathlib
 import subprocess
 from getpass import getpass
 from io import StringIO
@@ -63,7 +64,11 @@ if __name__ == "__main__":
             if field == "spread":
                 field = "width"
 
-            file_path = f"{base_dir}/{field}/{scientific_name}.json"
+            # create the directory if it doesn't already exist
+            dir_path = f"{base_dir}/{field}"
+            pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
+
+            file_path = f"{dir_path}/{scientific_name}.json"
             if os.path.exists(file_path):
                 continue  # file already exists, don't overwrite
 
