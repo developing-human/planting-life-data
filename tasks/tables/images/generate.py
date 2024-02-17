@@ -1,4 +1,5 @@
 import csv
+import emoji
 import json
 import luigi
 import os
@@ -121,10 +122,19 @@ class GenerateImagesSql(luigi.Task):
     def run(self):
         with self.input().open() as plant_csv, self.output().open("w") as out:
             reader = csv.DictReader(plant_csv)
+            
+            def sanitize(s: str) -> str:
+                s = s.replace("'", "''")
+                s = emoji.replace_emoji(s, "")
+                return s
 
             for row in reader:
                 scientific_name = row["scientific_name"]
-                title = row["title"].replace("'", "''")
+                title = sanitize(row["title"])
+                author = sanitize(row["author"])
+                
+                if len(title) > 190:
+                    title = title[:190] + "..."
 
                 select_image_id_sql = (
                     "SELECT image_id "
@@ -138,7 +148,7 @@ class GenerateImagesSql(luigi.Task):
                 sql = (
                     "UPDATE images \n"
                     + f"SET title = '{title}',\n"
-                    + f"    author = '{row['author']}',\n"
+                    + f"    author = '{author}',\n"
                     + f"    license = '{row['license']}',\n"
                     + f"    original_url = '{row['original_url']}',\n"
                     + f"    card_url = '{row['card_url']}'\n"

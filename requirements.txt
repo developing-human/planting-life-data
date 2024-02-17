@@ -1,6 +1,9 @@
 # helps parse html
 beautifulsoup4==4.12
 
+# for removing emojis from strings
+emoji=2.10.1
+
 # schedules & runs tasks
 luigi==3.4
 
