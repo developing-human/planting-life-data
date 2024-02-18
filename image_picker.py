@@ -154,13 +154,11 @@ for scientific_name in scientific_names:
     choices = load_choices_for_plant(scientific_name)
     if not choices:
         continue
+    
+    print(f"Choose for: {scientific_name}")
 
     urls = [choice["card_url"] for choice in choices]
     images = load_images_from_urls(urls[:NUM_IMAGES])
-
-    # Testing what happens if fewer than NUM_IMAGES are available
-    if scientific_name == scientific_names[1]:
-        images = images[:2]
 
     # Update the window with the image data
     for i, img in enumerate(images):
