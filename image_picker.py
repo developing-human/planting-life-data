@@ -55,7 +55,7 @@ def load_image(url: str) -> Image:
         right = img.width
         top = img.height / 2 - img.width / 2
         bottom = img.height / 2 + img.width / 2
-        
+
     cropped = img.crop((left, top, right, bottom))
 
     # Resize the image
@@ -114,9 +114,18 @@ def save_choice(scientific_name: str, choice: dict):
 
     # Convert choice into expected row format
     row_to_save = {key: choice[key] for key in choice if key in fields}
-    row_to_save["scientific_name"] = scientific_name.capitalize()
 
-    choices.append(row_to_save)
+    scientific_name = scientific_name.capitalize()
+    row_to_save["scientific_name"] = scientific_name
+
+    existing_row = next(
+        (row for row in choices if row.get("scientific_name") == scientific_name), None
+    )
+
+    if existing_row:
+        existing_row.update(row_to_save)
+    else:
+        choices.append(row_to_save)
 
     # Keep this file sorted for sanity's sake
     choices.sort(key=itemgetter("scientific_name"))
@@ -128,21 +137,28 @@ def save_choice(scientific_name: str, choice: dict):
 
 
 if len(sys.argv) != 2:
-    print(f"Usage: python3 {sys.argv[0]} plants_list.txt")
+    print(f"Usage: python3 {sys.argv[0]} plants_list.txt | scientific name")
     exit(1)
 
 # Loading here so this can fail before window opens for file not found
-plants_filename = sys.argv[1]
-with open(plants_filename, "r") as f:
-    scientific_names = f.read().splitlines()
+filename_or_scientific_name: str = sys.argv[1]
 
-# Don't prompt for plants which already have images picked
-with open(CHOICES_CSV_FILENAME, "r") as f:
-    rows = list(csv.DictReader(f))
-    already_chosen_names = [row["scientific_name"].lower() for row in rows]
-    scientific_names = [
-        name for name in scientific_names if name not in already_chosen_names
-    ]
+if filename_or_scientific_name.endswith(".txt"):
+    with open(filename_or_scientific_name, "r") as f:
+        scientific_names = f.read().splitlines()
+
+    # Don't prompt for plants which already have images picked
+    with open(CHOICES_CSV_FILENAME, "r") as f:
+        rows = list(csv.DictReader(f))
+        already_chosen_names = [row["scientific_name"].lower() for row in rows]
+        scientific_names = [
+            name for name in scientific_names if name not in already_chosen_names
+        ]
+else:
+    # For a specific plant name, always ask for the picture without
+    # checking if it was already chosen
+    scientific_names = [filename_or_scientific_name.lower()]
+
 
 if not scientific_names:
     print("No choices left to make, enjoy your day!")
@@ -154,7 +170,7 @@ for scientific_name in scientific_names:
     choices = load_choices_for_plant(scientific_name)
     if not choices:
         continue
-    
+
     print(f"Choose for: {scientific_name}")
 
     urls = [choice["card_url"] for choice in choices]
