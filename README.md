@@ -22,8 +22,6 @@ Two big ways you can help out are:
 
 To make a suggestion, please create an [issue](https://github.com/developing-human/planting-life-data/issues).
 
-TODO: Add link to slack.
-
 ## Design
 
 Data is collected using an [ETL](https://en.wikipedia.org/wiki/Extract%2C_transform%2C_load) process
@@ -33,9 +31,7 @@ external services need to be used.
 - Extract: Raw data (HTML, JSON, etc) is extracted from datasources like [USDA](https://plants.usda.gov/),
   [Wildflower](https://www.wildflower.org/plants/), and [ChatGPT](https://chat.openai.com).
 - Transform: The fetched data is parsed and transformed into the fields that will appear in the output.
-- Load: The data is loaded into the generated CSV.
-
-TODO: Write more about datasources / tasks / tables
+- Load: The data is loaded into the generated CSV or SQL files.
 
 ## Setup
 
