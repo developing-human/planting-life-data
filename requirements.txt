@@ -2,7 +2,7 @@
 beautifulsoup4==4.12
 
 # for removing emojis from strings
-emoji=2.10.1
+emoji==2.10.1
 
 # schedules & runs tasks
 luigi==3.4
@@ -14,10 +14,10 @@ openai==1.3.7
 pytest==7.4
 
 # loads images for image picker
-pillow==10.2.0
+pillow==11.3.0
 
 # gui for image picker
-PySimpleGUI==4.60.5
+PySimpleGUI==5.0.8.3
 
 # executes http requests
 requests==2.31
