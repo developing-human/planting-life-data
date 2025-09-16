@@ -46,7 +46,7 @@ class ExtractFlickrSearchResults(luigi.Task):
         session.mount("https://api.flickr.com", HTTPAdapter(max_retries=retries))
 
         response = session.get(
-            "https://api.flickr.com/services/rest", params=params, timeout=2
+            "https://api.flickr.com/services/rest", params=params, timeout=10
         )
 
         with self.output().open("w") as f:
