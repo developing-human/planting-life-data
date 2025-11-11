@@ -2,7 +2,7 @@ import luigi
 from tasks.lenient import LenientTask
 import json
 import re
-from .chatgpt import ChatGptTask, MODEL_GPT_4_TURBO
+from .chatgpt import ChatGptTask, MODEL_HIGH_QUALITY
 
 
 class ExtractRating(ChatGptTask):
@@ -15,7 +15,7 @@ class ExtractRating(ChatGptTask):
     scientific_name: str = luigi.Parameter()
 
     def get_model(self):
-        return MODEL_GPT_4_TURBO
+        return MODEL_HIGH_QUALITY
 
 
 class TransformRating(LenientTask):

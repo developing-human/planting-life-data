@@ -1,9 +1,8 @@
 from tasks.lenient import LenientTask
 import openai
 
-MODEL_GPT_3_5 = "gpt-3.5-turbo"
-MODEL_GPT_4 = "gpt-4"
-MODEL_GPT_4_TURBO = "gpt-4-1106-preview"
+MODEL_LOW_QUALITY = "gpt-5-nano"
+MODEL_HIGH_QUALITY = "gpt-5-mini"
 
 SOURCE_NAME = "ChatGPT"
 
@@ -26,15 +25,14 @@ class ChatGptTask(LenientTask):
                 },
                 {"role": "user", "content": self.get_prompt()},
             ],
-            temperature=0.1,
         )
 
         with self.output().open("w") as f:
             f.write(response.choices[0].message.content)
 
     def get_model(self) -> str:
-        """The ChatGPT model to use, defaulting to 3.5 because it's fast/cheap"""
-        return MODEL_GPT_3_5
+        """The ChatGPT model to use, defaulting to low quality because it's fast/cheap"""
+        return MODEL_LOW_QUALITY
 
     def get_prompt(self) -> str:
         """The prompt to submit to ChatGPT"""

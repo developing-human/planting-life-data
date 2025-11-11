@@ -2,7 +2,7 @@ import luigi
 from tasks.lenient import LenientTask
 import json
 import re
-from .chatgpt import ChatGptTask, MODEL_GPT_4_TURBO, SOURCE_NAME
+from .chatgpt import ChatGptTask, MODEL_HIGH_QUALITY, SOURCE_NAME
 
 
 class ExtractGrowingConditions(ChatGptTask):
@@ -46,7 +46,7 @@ For example:
 """
 
     def get_model(self) -> str:
-        return MODEL_GPT_4_TURBO
+        return MODEL_HIGH_QUALITY
 
 
 class TransformMoisture(LenientTask):

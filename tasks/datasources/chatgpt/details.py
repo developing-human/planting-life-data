@@ -2,7 +2,7 @@ import luigi
 import json
 import re
 from tasks.lenient import LenientTask
-from .chatgpt import ChatGptTask, MODEL_GPT_4_TURBO
+from .chatgpt import ChatGptTask, MODEL_HIGH_QUALITY
 
 
 class TransformSize(LenientTask):
@@ -69,7 +69,7 @@ list only feet and inches using ' and \" for abbreviations.  Here are two exampl
 ```"""
 
     def get_model(self) -> str:
-        return MODEL_GPT_4_TURBO
+        return MODEL_HIGH_QUALITY
 
 
 class TransformHeight(TransformSize):
@@ -123,7 +123,7 @@ list only feet and inches using ' and \" for abbreviations.  Here are two exampl
 ```"""
 
     def get_model(self) -> str:
-        return MODEL_GPT_4_TURBO
+        return MODEL_HIGH_QUALITY
 
 
 class TransformWidth(TransformSize):
@@ -168,7 +168,7 @@ Choose one of: early spring, spring, late spring, early summer, summer, late sum
 early fall, fall, or late fall.  If it does not bloom, say 'does not bloom'."""
 
     def get_model(self) -> str:
-        return MODEL_GPT_4_TURBO
+        return MODEL_HIGH_QUALITY
 
 
 class TransformBloom(LenientTask):
