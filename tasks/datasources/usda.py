@@ -16,7 +16,7 @@ class ExtractPlantList(luigi.Task):
 
     def run(self):
         response = requests.get(
-            "https://plants.usda.gov/assets/docs/CompletePLANTSList/plantlst.txt"
+            "https://plants.sc.egov.usda.gov/DocumentLibrary/Txt/plantlst.txt"
         )
         with self.output().open("w") as f:
             f.write(response.text)
