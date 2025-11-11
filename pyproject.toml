@@ -12,10 +12,10 @@ dependencies = [
     "emoji==2.10.1",
 
     # schedules & runs tasks
-    "luigi==3.4",
+    "luigi==3.6",
 
     # calls chatgpt
-    "openai==1.3.7",
+    "openai==2.7.2",
 
     # loads images for image picker
     "pillow==11.3.0",
@@ -35,3 +35,8 @@ dependencies = [
 pythonpath = [
  "."
 ]
+
+filterwarnings = [
+    'ignore:datetime\.datetime\.utcfromtimestamp:DeprecationWarning'
+]
+
