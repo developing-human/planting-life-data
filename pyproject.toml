@@ -21,7 +21,7 @@ dependencies = [
     "pillow==11.3.0",
 
     # gui for image picker
-    "pysimplegui==5.0.8.3",
+    "freesimplegui==5.2.0",
 
     # runs unit tests
     # TODO: Move me to a test section?
@@ -39,4 +39,5 @@ pythonpath = [
 filterwarnings = [
     'ignore:datetime\.datetime\.utcfromtimestamp:DeprecationWarning'
 ]
+
 

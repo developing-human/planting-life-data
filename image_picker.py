@@ -1,7 +1,7 @@
 import concurrent.futures
 import csv
 import json
-import PySimpleGUI as sg
+import FreeSimpleGUI as sg
 import requests
 import sys
 from PIL import Image
