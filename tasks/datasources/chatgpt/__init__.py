@@ -1,4 +1,4 @@
-from .details import TransformBloom, TransformHeight, TransformWidth
+from .details import TransformBloom, TransformHeight, TransformSize, TransformWidth
 from .conditions import TransformMoisture, TransformShade
 from .ratings import (
     TransformBirdRating,
@@ -12,6 +12,7 @@ __all__ = [
     "TransformMoisture",
     "TransformBloom",
     "TransformHeight",
+    "TransformSize",
     "TransformWidth",
     "TransformPollinatorRating",
     "TransformBirdRating",

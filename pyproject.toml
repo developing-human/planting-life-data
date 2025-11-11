@@ -1,3 +1,36 @@
+[project]
+name = "planting-life-data"
+version = "0.1.0"
+description = "Organizes data around native plants, exporting csv and sql."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    # helps parse html
+    "beautifulsoup4==4.12",
+
+    # for removing emojis from strings
+    "emoji==2.10.1",
+
+    # schedules & runs tasks
+    "luigi==3.4",
+
+    # calls chatgpt
+    "openai==1.3.7",
+
+    # loads images for image picker
+    "pillow==11.3.0",
+
+    # gui for image picker
+    "pysimplegui==5.0.8.3",
+
+    # runs unit tests
+    # TODO: Move me to a test section?
+    "pytest==7.4",
+
+    # executes http requests
+    "requests==2.31",
+]
+
 [tool.pytest.ini_options]
 pythonpath = [
  "."
