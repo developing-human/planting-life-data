@@ -1,8 +1,11 @@
-import luigi
-from tasks.lenient import LenientTask
 import json
 import re
-from .chatgpt import ChatGptTask, MODEL_HIGH_QUALITY
+
+import luigi
+
+from tasks.lenient import LenientTask
+
+from .chatgpt import MODEL_HIGH_QUALITY, ChatGptTask
 
 
 class ExtractRating(ChatGptTask):
@@ -12,7 +15,7 @@ class ExtractRating(ChatGptTask):
     Output: ChatGPT's text response to the prompt
     """
 
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def get_model(self):
         return MODEL_HIGH_QUALITY
@@ -27,7 +30,7 @@ class TransformRating(LenientTask):
     """
 
     task_namespace = "chatgpt"  # allows tasks of same name in diff packages
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def run_lenient(self):
         with self.input().open("r") as f:

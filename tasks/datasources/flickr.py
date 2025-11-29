@@ -1,10 +1,12 @@
 import json
-import luigi
 import os
+
+import luigi
 import requests
-from tasks.datasources.usda import TransformCommonName
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from urllib3.util.retry import Retry
+
+from tasks.datasources.usda import TransformCommonName
 
 
 class ExtractFlickrSearchResults(luigi.Task):
@@ -12,13 +14,12 @@ class ExtractFlickrSearchResults(luigi.Task):
     raw response from photo search, which contains details like:
     license, author, title, description, size, url."""
 
-    search_term: str = luigi.Parameter()
+    search_term: str = luigi.Parameter()  # type: ignore
 
     def output(self):
         # Sanitize by converting to lowercase, swapping spaces for hyphens,
         # and only keeping letters/hyphens
         sanitized = sanitize_search_term(self.search_term)
-
         return luigi.LocalTarget(f"data/raw/flickr/{sanitized}.json")
 
     def run(self):
@@ -72,7 +73,7 @@ class TransformValidFlickrImages(luigi.Task):
     """Transforms Flickr's raw result into a list of photos into a simplified
     model with only the fields that are needed.  Discards invalid data."""
 
-    search_term: str = luigi.Parameter()
+    search_term: str = luigi.Parameter()  # type: ignore
 
     def requires(self):
         return ExtractFlickrSearchResults(search_term=self.search_term)
@@ -173,8 +174,8 @@ class TransformValidFlickrImages(luigi.Task):
 class TransformPrioritizedFlickrImages(luigi.Task):
     """Prioritizes the result of TransformValidFlickrImages, best is first."""
 
-    scientific_name: str = luigi.Parameter()
-    search_term: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
+    search_term: str = luigi.Parameter()  # type: ignore
 
     def requires(self):
         return [
@@ -230,7 +231,7 @@ class TransformPrioritizedFlickrImages(luigi.Task):
 class TransformBestFlickrImage(luigi.Task):
     """Looks at both blooming & non-blooming results to choose the best image"""
 
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def requires(self):
         blooming_search_term = f"{self.scientific_name} blooming"

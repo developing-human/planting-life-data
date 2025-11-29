@@ -1,13 +1,33 @@
 import concurrent.futures
 import csv
 import json
-import FreeSimpleGUI as sg
-import requests
 import sys
-from PIL import Image
 from io import BytesIO
 from operator import itemgetter
+from os import environ
+
+import requests
+from PIL import Image
+
 from tasks.datasources.flickr import sanitize_search_term
+
+# this snippet, from a github issue, helps find the tcl/tkinter
+# library when running through uv.
+if not ("TCL_LIBRARY" in environ and "TK_LIBRARY" in environ):
+    import platform
+    import tkinter
+    from pathlib import Path
+    from sys import base_prefix
+
+    try:
+        tkinter.Tk()
+    except tkinter.TclError:
+        tk_dir = "tcl" if platform.system() == "Windows" else "lib"
+        tk_path = Path(base_prefix) / tk_dir
+        environ["TCL_LIBRARY"] = str(next(tk_path.glob("tcl8.*")))
+        environ["TK_LIBRARY"] = str(next(tk_path.glob("tk8.*")))
+
+import FreeSimpleGUI as sg
 
 IMG_SIZE = 300
 GRID_SIZE = 5
@@ -19,7 +39,7 @@ def create_window() -> sg.Window:
     layout = [
         [
             sg.Button(
-                key=f"image{i + j*GRID_SIZE}",
+                key=f"image{i + j * GRID_SIZE}",
                 image_filename="",
                 image_size=(IMG_SIZE, IMG_SIZE),
                 pad=(0, 0),
@@ -33,10 +53,14 @@ def create_window() -> sg.Window:
     return sg.Window("Select an Image", layout, finalize=True)
 
 
-def load_image(url: str) -> Image:
+def load_image(url: str) -> Image.Image | None:
     """Loads one image from its url and resizes it so the longest side
     is IMG_SIZE."""
-    response = requests.get(url)
+    response: requests.Response = requests.get(url)
+
+    if response.status_code != 200:
+        return None
+
     img = Image.open(BytesIO(response.content))
 
     if img.width > img.height:
@@ -47,8 +71,6 @@ def load_image(url: str) -> Image:
         right = img.width / 2 + img.height / 2
         top = 0
         bottom = img.height
-
-        longest_side = img.width
     else:
         # portrait
         left = 0
@@ -64,7 +86,7 @@ def load_image(url: str) -> Image:
     return cropped
 
 
-def load_images_from_urls(urls: list[str]) -> list[Image]:
+def load_images_from_urls(urls: list[str]) -> list[Image.Image | None]:
     with concurrent.futures.ThreadPoolExecutor() as executor:
         return list(executor.map(load_image, urls))
 
@@ -178,6 +200,9 @@ for scientific_name in scientific_names:
 
     # Update the window with the image data
     for i, img in enumerate(images):
+        if img is None:
+            continue
+
         bio = BytesIO()
         img.save(bio, format="PNG")
         window[f"image{i}"].update(image_data=bio.getvalue())

@@ -1,8 +1,12 @@
-import luigi
-from tasks.lenient import LenientTask
 import json
 import re
-from .chatgpt import ChatGptTask, MODEL_HIGH_QUALITY, SOURCE_NAME
+from typing import cast
+
+import luigi
+
+from tasks.lenient import LenientTask
+
+from .chatgpt import MODEL_HIGH_QUALITY, SOURCE_NAME, ChatGptTask
 
 
 class ExtractGrowingConditions(ChatGptTask):
@@ -12,7 +16,7 @@ class ExtractGrowingConditions(ChatGptTask):
     Output: ChatGPT's text response to the prompt
     """
 
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def output(self):
         return luigi.LocalTarget(
@@ -62,7 +66,7 @@ class TransformMoisture(LenientTask):
     """
 
     task_namespace = "chatgpt"  # allows tasks of same name in diff packages
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def requires(self):
         return ExtractGrowingConditions(scientific_name=self.scientific_name)
@@ -81,6 +85,8 @@ class TransformMoisture(LenientTask):
 
         with self.input().open("r") as f:
             result = build_condition_result(f.read(), question_to_field)
+            result = cast(dict[str, bool | str], result)
+
             result["moisture_source"] = SOURCE_NAME
             result["moisture_source_detail"] = self.requires().get_model()
 
@@ -101,7 +107,7 @@ class TransformShade(LenientTask):
     """
 
     task_namespace = "chatgpt"  # allows tasks of same name in diff packages
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def requires(self):
         return ExtractGrowingConditions(scientific_name=self.scientific_name)
@@ -120,6 +126,8 @@ class TransformShade(LenientTask):
 
         with self.input().open("r") as f:
             result = build_condition_result(f.read(), question_to_field)
+            result = cast(dict[str, bool | str], result)
+
             result["shade_source"] = SOURCE_NAME
             result["shade_source_detail"] = self.requires().get_model()
 
@@ -133,7 +141,7 @@ def build_condition_result(
     """Parses the given text into a dict of True/False answers to each question"""
     result = {}
 
-    yes_answers = find_yes_answers(text, question_to_field.keys())
+    yes_answers = find_yes_answers(text, list(question_to_field.keys()))
     for question, result_field in question_to_field.items():
         result[result_field] = question in yes_answers
 

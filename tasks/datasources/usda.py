@@ -1,9 +1,10 @@
+import csv
+import json
+import logging
+import time
+
 import luigi
 import requests
-import json
-import csv
-import time
-import logging
 
 
 class ExtractPlantList(luigi.Task):
@@ -84,7 +85,7 @@ class TransformSymbol(luigi.Task):
     Output: USDA's symbol for this plant
     """
 
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def requires(self):
         return TransformPlantList()
@@ -135,7 +136,7 @@ class ExtractPlantProfile(luigi.Task):
 
     """
 
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def requires(self):
         return TransformSymbol(scientific_name=self.scientific_name)
@@ -166,7 +167,7 @@ class TransformCommonName(luigi.Task):
         "common_name": the plant's common name, formatted in title case
     """
 
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def requires(self):
         return ExtractPlantProfile(scientific_name=self.scientific_name)

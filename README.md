@@ -34,22 +34,21 @@ external services need to be used.
 - Load: The data is loaded into the generated CSV or SQL files.
 
 ## Setup
-
-```bash
-# Setup & activate the virtual env
-python3 -m venv venv
-source venv/bin/activate
-
-# Install dependencies
-pip3 install -r requirements.txt
-```
+Install [uv](https://docs.astral.sh/uv/).
 
 ## Usage
 
 ```bash
 # Collect data about the plants in short.txt
-python3 generate_plants_csv.py data/in/scientific-names/short.txt
+uv run generate_plants_csv.py data/in/scientific-names/short.txt
 
 # Print the collected data to the terminal
 cat data/out/plants-short.csv
+
+# Run tests
+uv run pytest
+
+# Run image picker
+uv run image_picker.py data/in/scientific-names/all.txt
 ```
+

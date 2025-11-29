@@ -1,10 +1,12 @@
+import json
+import time
+
 import luigi
 import requests
-import time
-from tasks.lenient import LenientTask, StrictError
 from bs4 import BeautifulSoup
+
 import tasks.datasources.usda as usda
-import json
+from tasks.lenient import LenientTask, StrictError
 
 SOURCE_NAME = "Wildflower"
 
@@ -16,7 +18,7 @@ class ExtractWildflowerHtml(LenientTask):
     Output: raw html (*.html) and url (*.source.txt)
     """
 
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def requires(self):
         # Wildflower.org uses USDA symbols in its URL
@@ -78,7 +80,7 @@ class TransformMoisture(LenientTask):
     """
 
     task_namespace = "wildflower"  # allows tasks of same name in diff packages
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def requires(self):
         return ExtractWildflowerHtml(scientific_name=self.scientific_name)
@@ -139,7 +141,7 @@ class TransformShade(LenientTask):
     """
 
     task_namespace = "wildflower"  # allows tasks of same name in diff packages
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def requires(self):
         return ExtractWildflowerHtml(scientific_name=self.scientific_name)

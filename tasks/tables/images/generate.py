@@ -1,18 +1,22 @@
 import csv
-import emoji
 import json
-import luigi
 import os
+
+import emoji
+import luigi
+
 import tasks.datasources.flickr as flickr
 
 
 class GenerateImagesWithoutHumanOverridesCsv(luigi.Task):
-    plants_filename: str = luigi.Parameter()
+    plants_filename: str = luigi.Parameter()  # type: ignore
 
     def output(self):
         filename = os.path.basename(self.plants_filename)
         filename_no_ext = os.path.splitext(filename)[0]
-        return luigi.LocalTarget(f"data/out/images-without-human-overrides-{filename_no_ext}.csv")
+        return luigi.LocalTarget(
+            f"data/out/images-without-human-overrides-{filename_no_ext}.csv"
+        )
 
     def run(self):
         with open(self.plants_filename) as plant_file:
@@ -33,7 +37,7 @@ class GenerateImagesWithoutHumanOverridesCsv(luigi.Task):
 
             for i, scientific_name in enumerate(scientific_names):
                 print(
-                    f"Processing {scientific_name} ({i+1} of {len(scientific_names)})"
+                    f"Processing {scientific_name} ({i + 1} of {len(scientific_names)})"
                 )
 
                 tasks = [flickr.TransformBestFlickrImage(scientific_name)]
@@ -62,8 +66,9 @@ class GenerateImagesWithoutHumanOverridesCsv(luigi.Task):
                 else:
                     print(f"Missing data, skipping row for {scientific_name}")
 
+
 class GenerateImagesCsv(luigi.Task):
-    plants_filename: str = luigi.Parameter()
+    plants_filename: str = luigi.Parameter()  # type: ignore
 
     def output(self):
         filename = os.path.basename(self.plants_filename)
@@ -71,21 +76,23 @@ class GenerateImagesCsv(luigi.Task):
         return luigi.LocalTarget(f"data/out/images-{filename_no_ext}.csv")
 
     def requires(self):
-        return GenerateImagesWithoutHumanOverridesCsv(plants_filename=self.plants_filename)
+        return GenerateImagesWithoutHumanOverridesCsv(
+            plants_filename=self.plants_filename
+        )
 
     def run(self):
         # originals are data that was automatically gathered
         with self.input().open() as csvfile:
             reader = csv.DictReader(csvfile)
             originals = list(reader)
-            
+
         # human overrides are data that someone defined to override
         # the automatically generated data.  convert to dict for fast lookups.
         human_overrides_filename = "data/in/human-choices/images.csv"
         with open(human_overrides_filename, "r", newline="") as csvfile:
             reader = csv.DictReader(csvfile)
-            overrides = { item["scientific_name"]: item for item in reader }
-            
+            overrides = {item["scientific_name"]: item for item in reader}
+
         fields = [
             "scientific_name",
             "title",
@@ -98,18 +105,19 @@ class GenerateImagesCsv(luigi.Task):
         with self.output().open("w") as out:
             csv_out = csv.DictWriter(out, fields)
             csv_out.writeheader()
-            
+
             for original in originals:
                 scientific_name = original["scientific_name"]
                 override = overrides.get(scientific_name, None)
-                
+
                 if override:
                     csv_out.writerow(override)
                 else:
                     csv_out.writerow(original)
 
+
 class GenerateImagesSql(luigi.Task):
-    plants_filename: str = luigi.Parameter()
+    plants_filename: str = luigi.Parameter()  # type: ignore
 
     def output(self):
         filename = os.path.basename(self.plants_filename)
@@ -122,7 +130,7 @@ class GenerateImagesSql(luigi.Task):
     def run(self):
         with self.input().open() as plant_csv, self.output().open("w") as out:
             reader = csv.DictReader(plant_csv)
-            
+
             def sanitize(s: str) -> str:
                 s = s.replace("'", "''")
                 s = emoji.replace_emoji(s, "")
@@ -132,7 +140,7 @@ class GenerateImagesSql(luigi.Task):
                 scientific_name = row["scientific_name"]
                 title = sanitize(row["title"])
                 author = sanitize(row["author"])
-                
+
                 if len(title) > 190:
                     title = title[:190] + "..."
 

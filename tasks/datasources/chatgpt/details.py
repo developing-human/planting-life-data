@@ -1,8 +1,11 @@
-import luigi
 import json
 import re
+
+import luigi
+
 from tasks.lenient import LenientTask
-from .chatgpt import ChatGptTask, MODEL_HIGH_QUALITY
+
+from .chatgpt import MODEL_HIGH_QUALITY, ChatGptTask
 
 
 class TransformSize(LenientTask):
@@ -14,10 +17,10 @@ class TransformSize(LenientTask):
     """
 
     task_namespace = "chatgpt"  # allows tasks of same name in diff packages
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def run_lenient(self):
-        with self.input().open("r") as f:
+        with self.input().open("r") as f:  # type: ignor
             size = self.parse_size(f.read())
             size_field_name = self.get_size_field_name()
             result = {size_field_name: size}
@@ -30,7 +33,7 @@ class TransformSize(LenientTask):
             "get_size_field_name must be overridden by subclasses"
         )
 
-    def parse_size(self, raw_response: str) -> int:
+    def parse_size(self, raw_response: str) -> str:
         pattern = r'[0-9]+[\'"]?-[0-9]+[\'"]'
         match = re.search(pattern, raw_response)
         if match:
@@ -47,7 +50,7 @@ class ExtractHeight(ChatGptTask):
     Output: ChatGPT's text response to the prompt
     """
 
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def output(self):
         return luigi.LocalTarget(
@@ -101,7 +104,7 @@ class ExtractWidth(ChatGptTask):
     Output: ChatGPT's text response to the prompt
     """
 
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def output(self):
         return luigi.LocalTarget(
@@ -155,7 +158,7 @@ class ExtractBloom(ChatGptTask):
     Output: ChatGPT's text response to the prompt
     """
 
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def output(self):
         return luigi.LocalTarget(
@@ -180,7 +183,7 @@ class TransformBloom(LenientTask):
     """
 
     task_namespace = "chatgpt"  # allows tasks of same name in diff packages
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def requires(self):
         return ExtractBloom(scientific_name=self.scientific_name)
@@ -198,7 +201,7 @@ class TransformBloom(LenientTask):
             with self.output().open("w") as f:
                 f.write(json.dumps(result, indent=4))
 
-    def parse_bloom(self, raw_response: str) -> int:
+    def parse_bloom(self, raw_response: str) -> str:
         seasons = [
             "early spring",
             "late spring",

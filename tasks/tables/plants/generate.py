@@ -1,14 +1,16 @@
 import csv
 import json
-import luigi
 import os
+
+import luigi
+
+import tasks.datasources.chatgpt as chatgpt
 import tasks.datasources.usda as usda
 import tasks.datasources.wildflower as wildflower
-import tasks.datasources.chatgpt as chatgpt
 
 
 class GeneratePlantsCsv(luigi.Task):
-    plants_filename: str = luigi.Parameter()
+    plants_filename: str = luigi.Parameter()  # type: ignore
 
     def output(self):
         filename = os.path.basename(self.plants_filename)
@@ -46,7 +48,7 @@ class GeneratePlantsCsv(luigi.Task):
 
             for i, scientific_name in enumerate(scientific_names):
                 print(
-                    f"Processing {scientific_name} ({i+1} of {len(scientific_names)})"
+                    f"Processing {scientific_name} ({i + 1} of {len(scientific_names)})"
                 )
 
                 tasks = [
@@ -88,7 +90,7 @@ class GeneratePlantsCsv(luigi.Task):
 
 
 class GeneratePlantsSql(luigi.Task):
-    plants_filename: str = luigi.Parameter()
+    plants_filename: str = luigi.Parameter()  # type: ignore
 
     def output(self):
         filename = os.path.basename(self.plants_filename)
@@ -163,7 +165,7 @@ class AggregateFieldTask(luigi.Task):
 
 
 class AggregateShade(AggregateFieldTask):
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def output(self):
         return luigi.LocalTarget(f"data/aggregated/shade/{self.scientific_name}.json")
@@ -176,7 +178,7 @@ class AggregateShade(AggregateFieldTask):
 
 
 class AggregateMoisture(AggregateFieldTask):
-    scientific_name: str = luigi.Parameter()
+    scientific_name: str = luigi.Parameter()  # type: ignore
 
     def output(self):
         return luigi.LocalTarget(
