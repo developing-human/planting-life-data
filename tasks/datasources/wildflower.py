@@ -22,7 +22,7 @@ class ExtractWildflowerHtml(LenientTask):
 
     def requires(self):
         # Wildflower.org uses USDA symbols in its URL
-        return usda.TransformSymbol(scientific_name=self.scientific_name)
+        return [usda.TransformSymbol(scientific_name=self.scientific_name)]
 
     def output(self):
         return [
@@ -31,6 +31,8 @@ class ExtractWildflowerHtml(LenientTask):
         ]
 
     def run_lenient(self):
+        print("extract from wildflower (api call)")
+
         with self.input().open() as f:
             symbol = f.read().strip()
 
@@ -175,4 +177,56 @@ class TransformShade(LenientTask):
 
             # Write formatted JSON, for easier troubleshooting
             with self.output().open("w") as f:
+                f.write(json.dumps(result, indent=4))
+
+
+# WARNING: As of 2025-11-30, this is not used, as USDA's data was preferred.
+#          Keeping this around in case USDA has holes or this ends up better.
+class TransformHabit(LenientTask):
+    """Parses plant's habit (tree, shrub, etc) out of wildflower.org HTML.
+
+    Input: scientific name of plant (genus + species)
+    Output: String (enum?), of the plants habit
+            One of: tree, shrub, grass, garden
+
+    If file does not exist or parsing fails, writes a blank output file.
+    """
+
+    task_namespace = "wildflower"  # allows tasks of same name in diff packages
+    scientific_name: str = luigi.Parameter()  # type: ignore
+
+    def requires(self):  # type: ignore
+        return ExtractWildflowerHtml(scientific_name=self.scientific_name)
+
+    def output(self):  # type: ignore
+        return luigi.LocalTarget(
+            f"data/transformed/wildflower/habit/{self.scientific_name}.json"
+        )
+
+    def run_lenient(self):
+        with self.input()[0].open() as content, self.input()[1].open() as source_detail:
+            soup = BeautifulSoup(content, "html.parser")
+
+            # Find "Habit" in the html, habits are in next element
+            habit_tag = soup.find("strong", string="Habit:")
+
+            result = {}
+            if habit_tag:
+                next_sibling = habit_tag.find_next_sibling()
+                wf_habit_lower = next_sibling.get_text().strip().lower()
+
+                if "tree" in wf_habit_lower:
+                    result["habit"] = "tree"
+                elif "shrub" in wf_habit_lower:
+                    result["habit"] = "shrub"
+                elif "grass" in wf_habit_lower:
+                    result["habit"] = "grass"
+                else:
+                    result["habit"] = "garden"
+
+                result["habit_source"] = SOURCE_NAME
+                result["habit_source_detail"] = source_detail.read()
+
+            # Write formatted JSON, for easier troubleshooting
+            with self.output().open("w") as f:  # type: ignore
                 f.write(json.dumps(result, indent=4))

@@ -23,6 +23,7 @@ class ExtractFlickrSearchResults(luigi.Task):
         return luigi.LocalTarget(f"data/raw/flickr/{sanitized}.json")
 
     def run(self):
+        print("extract from flickr (api call)")
         api_key = os.environ["FLICKR_API_KEY"]  # will error if not defined
         params = {
             "method": "flickr.photos.search",

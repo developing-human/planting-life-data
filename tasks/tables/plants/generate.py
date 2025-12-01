@@ -33,6 +33,7 @@ class GeneratePlantsCsv(luigi.Task):
             "bloom",
             "height",
             "width",
+            "habit",
             "pollinator_rating",
             "bird_rating",
             "spread_rating",
@@ -41,6 +42,8 @@ class GeneratePlantsCsv(luigi.Task):
             "moisture_source_detail",
             "shade_source",
             "shade_source_detail",
+            "habit_source",
+            "habit_source_detail",
         ]
         with self.output().open("w") as out:
             csv_out = csv.DictWriter(out, fields)
@@ -62,6 +65,7 @@ class GeneratePlantsCsv(luigi.Task):
                     chatgpt.TransformBirdRating(scientific_name),
                     chatgpt.TransformSpreadRating(scientific_name),
                     chatgpt.TransformDeerResistanceRating(scientific_name),
+                    usda.TransformHabit(scientific_name),
                 ]
 
                 luigi.build(

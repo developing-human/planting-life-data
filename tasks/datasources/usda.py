@@ -6,13 +6,15 @@ import time
 import luigi
 import requests
 
+SOURCE_NAME = "USDA"
+
 
 class ExtractPlantList(luigi.Task):
     """Fetches USDA's CSV of all plants.
 
     It has details like USDA symbol, scientific name and common name."""
 
-    def output(self):
+    def output(self):  # type: ignore
         return luigi.LocalTarget("data/raw/usda/plant-complete-list.csv")
 
     def run(self):
@@ -26,14 +28,14 @@ class ExtractPlantList(luigi.Task):
 class TransformPlantList(luigi.Task):
     """Converts USDA's plant list into a JSON map from scientific name to USDA symbol"""
 
-    def requires(self):
+    def requires(self):  # type: ignore
         return ExtractPlantList()
 
-    def output(self):
+    def output(self):  # type: ignore
         return luigi.LocalTarget("data/transformed/usda/plant-complete-list.json")
 
     def run(self):
-        with self.input().open("r") as csv_file:
+        with self.input().open("r") as csv_file:  # type: ignore
             rows = list(csv.DictReader(csv_file))
 
             # Build a map of "genus species" -> (symbol, full scientific name)
@@ -41,6 +43,8 @@ class TransformPlantList(luigi.Task):
             name_to_tuple = {}
             for row in rows:
                 full_name = row.get("Scientific Name with Author")
+                if full_name is None:
+                    continue
 
                 # I don't know why, but some scientific names start with this character
                 # Removing it cleans up the results a bit
@@ -87,16 +91,16 @@ class TransformSymbol(luigi.Task):
 
     scientific_name: str = luigi.Parameter()  # type: ignore
 
-    def requires(self):
+    def requires(self):  # type: ignore
         return TransformPlantList()
 
-    def output(self):
+    def output(self):  # type: ignore
         return luigi.LocalTarget(
             f"data/transformed/usda/symbols/{self.scientific_name}.txt"
         )
 
     def run(self):
-        with self.input().open("r") as f:
+        with self.input().open("r") as f:  # type: ignore
             scientific_name_to_symbol: dict[str, str] = json.load(f)
 
             # First, try to lookup the scientific name directly.
@@ -138,25 +142,36 @@ class ExtractPlantProfile(luigi.Task):
 
     scientific_name: str = luigi.Parameter()  # type: ignore
 
-    def requires(self):
+    def requires(self):  # type: ignore
         return TransformSymbol(scientific_name=self.scientific_name)
 
-    def output(self):
-        return luigi.LocalTarget(
-            f"data/raw/usda/plant-profiles/{self.scientific_name}.json"
-        )
+    def output(self):  # type: ignore
+        return [
+            luigi.LocalTarget(
+                f"data/raw/usda/plant-profiles/{self.scientific_name}.json"
+            ),
+            luigi.LocalTarget(
+                f"data/raw/usda/plant-profiles/{self.scientific_name}.source.txt"
+            ),
+        ]
 
     def run(self):
-        symbol = self.input().open().read().strip()
-        response = requests.get(
+        print("extract from usda (api call)")
+        symbol = self.input().open().read().strip()  # type: ignore
+        url = (
             f"https://plantsservices.sc.egov.usda.gov/api/PlantProfile?symbol={symbol}"
         )
+        response = requests.get(url)
 
         # Throttle, to prevent spamming their service
         time.sleep(2)
 
-        with self.output().open("w") as f:
+        with self.output()[0].open("w") as f:
             f.write(response.text)
+
+        # Write the URL where it was fetched from
+        with self.output()[1].open("w") as f:
+            f.write(url)
 
 
 class TransformCommonName(luigi.Task):
@@ -169,16 +184,16 @@ class TransformCommonName(luigi.Task):
 
     scientific_name: str = luigi.Parameter()  # type: ignore
 
-    def requires(self):
+    def requires(self):  # type: ignore
         return ExtractPlantProfile(scientific_name=self.scientific_name)
 
-    def output(self):
+    def output(self):  # type: ignore
         return luigi.LocalTarget(
             f"data/transformed/usda/common-names/{self.scientific_name}.json"
         )
 
     def run(self):
-        with self.input().open("r") as f:
+        with self.input()[0].open("r") as f:  # type: ignore
             data = json.load(f)
             # from USDA, capitalization will be inconsistent
             common_name = data["CommonName"]
@@ -196,3 +211,59 @@ class TransformCommonName(luigi.Task):
             result = {"common_name": sanitized}
             with self.output().open("w") as f:
                 f.write(json.dumps(result))
+
+
+class TransformHabit(luigi.Task):
+    """Parses a plant's habit out of the USDA Plant Profile.
+
+    Input: scientific name of plant (genus + species)
+    Output: A JSON object with:
+        "habit": the habit of this plant (tree, shrub, grass, garden)
+    """
+
+    scientific_name: str = luigi.Parameter()  # type: ignore
+
+    def requires(self):  # type: ignore
+        return ExtractPlantProfile(scientific_name=self.scientific_name)
+
+    def output(self):  # type: ignore
+        return luigi.LocalTarget(
+            f"data/transformed/usda/habits/{self.scientific_name}.json"
+        )
+
+    def run(self):
+        with self.input()[0].open() as content, self.input()[1].open() as source_detail:
+            data = json.load(content)
+            usda_habits: list[str] = data["GrowthHabits"]
+
+            habit = TransformHabit.transform_usda_habits(usda_habits)
+
+            result = {
+                "habit": habit,
+                "habit_source": SOURCE_NAME,
+                "habit_source_detail": source_detail.read(),
+            }
+
+            with self.output().open("w") as f:
+                f.write(json.dumps(result))
+
+    @staticmethod
+    def transform_usda_habits(usda_habits: list[str]) -> str:
+        # usda may report multiple of:
+        # Forb/herb, Graminoid, Shrub, Subshrub, Tree
+        #
+        # Shrub+Tree tends to be what I'd think of as a shrub.
+        # Forb/herb tends to be what I'd call "garden"
+        # Sooo... prioritize the smallest?
+        if "Forb/herb" in usda_habits:
+            return "garden"
+        elif "Subshrub" in usda_habits:
+            return "garden"
+        elif "Shrub" in usda_habits:
+            return "shrub"
+        elif "Tree" in usda_habits:
+            return "tree"
+        elif "Graminoid" in usda_habits:
+            return "grass"
+        else:
+            return "garden"
