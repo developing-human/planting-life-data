@@ -50,5 +50,8 @@ uv run pytest
 
 # Run image picker
 uv run image_picker.py data/in/scientific-names/all.txt
+
+# Run a task directly
+PYTHONPATH=. uv run luigi --local-scheduler --module tasks.datasources.usda.location TransformPlantZipcodes --scientific-name "ilex verticillata"
 ```
 

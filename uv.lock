@@ -116,6 +116,15 @@ wheels = [
 ]
 
 [[package]]
+name = "haversine"
+version = "2.9.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1f/fe/5dc394a9db15c9f08c64ae050c03c01128227632fce07cc62aa5d32240d5/haversine-2.9.0.tar.gz", hash = "sha256:1103d7e1f0f108c25b31b63452c54d9d6f29389a70de7dd75fd4b908329b6fcf", size = 10171, upload-time = "2024-11-28T09:21:55.362Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fb/80/c9fa943acea97ec173deba84f7c83cc0639798c1dd97970bb90a73c1dc91/haversine-2.9.0-py2.py3-none-any.whl", hash = "sha256:d32031b6b4232e37764730a781a3b8cb248710f92aca6f553b8097524420754d", size = 7728, upload-time = "2024-11-28T09:21:53.817Z" },
+]
+
+[[package]]
 name = "httpcore"
 version = "1.0.9"
 source = { registry = "https://pypi.org/simple" }
@@ -281,6 +290,7 @@ dependencies = [
     { name = "beautifulsoup4" },
     { name = "emoji" },
     { name = "freesimplegui" },
+    { name = "haversine" },
     { name = "luigi" },
     { name = "openai" },
     { name = "pillow" },
@@ -294,6 +304,7 @@ requires-dist = [
     { name = "beautifulsoup4", specifier = "==4.12" },
     { name = "emoji", specifier = "==2.10.1" },
     { name = "freesimplegui", specifier = "==5.2.0" },
+    { name = "haversine", specifier = ">=2.9.0" },
     { name = "luigi", specifier = "==3.6" },
     { name = "openai", specifier = "==2.7.2" },
     { name = "pillow", specifier = "==11.3.0" },

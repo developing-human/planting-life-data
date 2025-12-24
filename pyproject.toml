@@ -23,6 +23,7 @@ dependencies = [
     # executes http requests
     "requests==2.31",
     "pytest-watcher>=0.4.3",
+    "haversine>=2.9.0",
 ]
 
 [tool.pytest.ini_options]

@@ -6,7 +6,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from tasks.datasources.usda import TransformCommonName
+from tasks.datasources.usda.usda import TransformCommonName
 
 
 class ExtractFlickrSearchResults(luigi.Task):

@@ -267,3 +267,27 @@ class TransformHabit(luigi.Task):
             return "grass"
         else:
             return "garden"
+
+
+class TransformPlantId(luigi.Task):
+    """Parses a plant's USDA id out of the plant profile.
+
+    Input: scientific name of plant (genus + species)
+    Output: The plants usda id
+    """
+
+    scientific_name: str = luigi.Parameter()  # type: ignore
+
+    def requires(self):  # type: ignore
+        return ExtractPlantProfile(scientific_name=self.scientific_name)
+
+    def output(self):  # type: ignore
+        return luigi.LocalTarget(f"data/transformed/usda/id/{self.scientific_name}.txt")
+
+    def run(self):
+        with self.input()[0].open("r") as f:  # type: ignore
+            data = json.load(f)
+            id = data["Id"]
+
+            with self.output().open("w") as f:
+                f.write(json.dumps(id))

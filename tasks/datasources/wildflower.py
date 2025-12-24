@@ -5,7 +5,7 @@ import luigi
 import requests
 from bs4 import BeautifulSoup
 
-import tasks.datasources.usda as usda
+import tasks.datasources.usda.usda as usda
 from tasks.lenient import LenientTask, StrictError
 
 SOURCE_NAME = "Wildflower"

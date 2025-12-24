@@ -5,7 +5,7 @@ import os
 import luigi
 
 import tasks.datasources.chatgpt as chatgpt
-import tasks.datasources.usda as usda
+import tasks.datasources.usda.usda as usda
 import tasks.datasources.wildflower as wildflower
 
 
