@@ -4,7 +4,7 @@ import sys
 
 import luigi
 
-from tasks.tables.plant_zipcodes.generate import GeneratePlantsZipcodesCsv
+from tasks.tables.plant_zipcodes.generate import GeneratePlantsZipcodesCsvInfile
 
 logging.getLogger().setLevel(logging.WARN)
 
@@ -18,15 +18,15 @@ if __name__ == "__main__":
     # Remove output files from these tasks before generating
     # Always want fresh results when using script
     tasks_to_clear = [
-        GeneratePlantsZipcodesCsv(plants_filename=plants_filename),
+        GeneratePlantsZipcodesCsvInfile(plants_filename=plants_filename),
     ]
 
     for task in tasks_to_clear:
-        path = task.output().path
+        path = task.output()[0].path
         if os.path.exists(path):
             os.remove(path)
 
-    task = GeneratePlantsZipcodesCsv(plants_filename=plants_filename)
+    task = GeneratePlantsZipcodesCsvInfile(plants_filename=plants_filename)
 
     result = luigi.build(
         [task],
