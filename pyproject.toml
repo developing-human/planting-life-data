@@ -24,6 +24,8 @@ dependencies = [
     "requests==2.31",
     "pytest-watcher>=0.4.3",
     "haversine>=2.9.0",
+    "mysql-connector-python>=9.5.0",
+    "python-dotenv>=1.2.1",
 ]
 
 [tool.pytest.ini_options]
