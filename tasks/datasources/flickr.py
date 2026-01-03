@@ -20,7 +20,7 @@ class ExtractFlickrSearchResults(luigi.Task):
         # Sanitize by converting to lowercase, swapping spaces for hyphens,
         # and only keeping letters/hyphens
         sanitized = sanitize_search_term(self.search_term)
-        return luigi.LocalTarget(f"data/raw/flickr/{sanitized}.json")
+        return [luigi.LocalTarget(f"data/raw/flickr/{sanitized}.json")]
 
     def run(self):
         print("extract from flickr (api call)")
@@ -51,7 +51,7 @@ class ExtractFlickrSearchResults(luigi.Task):
             "https://api.flickr.com/services/rest", params=params, timeout=10
         )
 
-        with self.output().open("w") as f:
+        with self.output()[0].open("w") as f:
             pretty_json = json.dumps(json.loads(response.text), indent=4)
             f.write(pretty_json)
 
@@ -77,17 +77,19 @@ class TransformValidFlickrImages(luigi.Task):
     search_term: str = luigi.Parameter()  # type: ignore
 
     def requires(self):
-        return ExtractFlickrSearchResults(search_term=self.search_term)
+        return [ExtractFlickrSearchResults(search_term=self.search_term)]
 
     def output(self):
         # Sanitize by converting to lowercase, swapping spaces for hyphens,
         # and only keeping letters/hyphens
         sanitized = sanitize_search_term(self.search_term)
 
-        return luigi.LocalTarget(f"data/transformed/flickr-sanitized/{sanitized}.json")
+        return [
+            luigi.LocalTarget(f"data/transformed/flickr-sanitized/{sanitized}.json")
+        ]
 
     def run(self):
-        with self.input().open("r") as flickr_result:
+        with self.input()[0][0].open("r") as flickr_result:
             flickr_result_json = json.loads(flickr_result.read())
 
         # Extract the useful parts from loaded json to prevent dealing with
@@ -98,7 +100,7 @@ class TransformValidFlickrImages(luigi.Task):
 
         transformed = [self._transform_flickr_photo(img) for img in filtered]
 
-        with self.output().open("w") as f:
+        with self.output()[0].open("w") as f:
             f.write(json.dumps(transformed, indent=4))
 
     def _filter_to_valid_photos(self, photos: list[dict]) -> list[dict]:
@@ -189,20 +191,20 @@ class TransformPrioritizedFlickrImages(luigi.Task):
         # and only keeping letters/hyphens
         sanitized = sanitize_search_term(self.search_term)
 
-        return luigi.LocalTarget(
-            f"data/transformed/flickr-prioritized/{sanitized}.json"
-        )
+        return [
+            luigi.LocalTarget(f"data/transformed/flickr-prioritized/{sanitized}.json")
+        ]
 
     def run(self):
         inputs = self.input()
-        with inputs[0].open("r") as images, inputs[1].open("r") as common_name:
+        with inputs[0][0].open("r") as images, inputs[1].open("r") as common_name:
             images_json = json.loads(images.read())
             common_name_json = json.loads(common_name.read())
 
         common_name_str = common_name_json["common_name"]
         prioritized = self._prioritize_images(images_json, common_name_str)
 
-        with self.output().open("w") as f:
+        with self.output()[0].open("w") as f:
             f.write(json.dumps(prioritized, indent=4))
 
     def _prioritize_images(self, images: list[dict], common_name: str) -> list[dict]:
@@ -248,14 +250,16 @@ class TransformBestFlickrImage(luigi.Task):
         ]
 
     def output(self):
-        return luigi.LocalTarget(
-            f"data/transformed/flickr/image/{self.scientific_name}.json"
-        )
+        return [
+            luigi.LocalTarget(
+                f"data/transformed/flickr/image/{self.scientific_name}.json"
+            )
+        ]
 
     def run(self):
         inputs = self.input()
-        with inputs[0].open("r") as blooming:
-            with inputs[1].open("r") as non_blooming:
+        with inputs[0][0].open("r") as blooming:
+            with inputs[1][0].open("r") as non_blooming:
                 blooming_json = json.loads(blooming.read())
                 non_blooming_json = json.loads(non_blooming.read())
 
@@ -267,7 +271,7 @@ class TransformBestFlickrImage(luigi.Task):
         else:
             best_image = {}
 
-        with self.output().open("w") as f:
+        with self.output()[0].open("w") as f:
             f.write(json.dumps(best_image, indent=4))
 
 

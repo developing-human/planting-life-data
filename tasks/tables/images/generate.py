@@ -6,6 +6,7 @@ import emoji
 import luigi
 
 import tasks.datasources.flickr as flickr
+import tasks.datasources.inaturalist as inaturalist
 
 
 class GenerateImagesWithoutHumanOverridesCsv(luigi.Task):
@@ -14,9 +15,11 @@ class GenerateImagesWithoutHumanOverridesCsv(luigi.Task):
     def output(self):
         filename = os.path.basename(self.plants_filename)
         filename_no_ext = os.path.splitext(filename)[0]
-        return luigi.LocalTarget(
-            f"data/out/images-without-human-overrides-{filename_no_ext}.csv"
-        )
+        return [
+            luigi.LocalTarget(
+                f"data/out/images-without-human-overrides-{filename_no_ext}.csv"
+            )
+        ]
 
     def run(self):
         with open(self.plants_filename) as plant_file:
@@ -31,7 +34,7 @@ class GenerateImagesWithoutHumanOverridesCsv(luigi.Task):
             "card_url",
         ]
 
-        with self.output().open("w") as out:
+        with self.output()[0].open("w") as out:
             csv_out = csv.DictWriter(out, fields)
             csv_out.writeheader()
 
@@ -40,7 +43,12 @@ class GenerateImagesWithoutHumanOverridesCsv(luigi.Task):
                     f"Processing {scientific_name} ({i + 1} of {len(scientific_names)})"
                 )
 
-                tasks = [flickr.TransformBestFlickrImage(scientific_name)]
+                # run both, even though flickr is prioritized. image picker
+                # will use both as options.
+                tasks = [
+                    flickr.TransformBestFlickrImage(scientific_name),
+                    inaturalist.TransformBestINaturalistImage(scientific_name),
+                ]
 
                 luigi.build(
                     tasks,
@@ -50,9 +58,12 @@ class GenerateImagesWithoutHumanOverridesCsv(luigi.Task):
 
                 row_out = {"scientific_name": scientific_name.capitalize()}
                 for task in tasks:
-                    with task.output().open() as f:
+                    with task.output()[0].open() as f:
                         json_str = f.read().strip()
-                        if json_str:
+
+                        # only use the first image result that is populated
+                        if json_str and len(row_out) == 1:
+                            print(f"populating for: {scientific_name}")
                             parsed = json.loads(json_str)
 
                             row_out.update(parsed)
