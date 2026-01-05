@@ -1,20 +1,4 @@
-from os import environ
-
-# this snippet, from a github issue, helps find the tcl/tkinter
-# library when running through uv.
-if not ("TCL_LIBRARY" in environ and "TK_LIBRARY" in environ):
-    import platform
-    import tkinter
-    from pathlib import Path
-    from sys import base_prefix
-
-    try:
-        tkinter.Tk()
-    except tkinter.TclError:
-        tk_dir = "tcl" if platform.system() == "Windows" else "lib"
-        tk_path = Path(base_prefix) / tk_dir
-        environ["TCL_LIBRARY"] = str(next(tk_path.glob("tcl8.*")))
-        environ["TK_LIBRARY"] = str(next(tk_path.glob("tk8.*")))
+import sys
 
 import FreeSimpleGUI as sg
 
@@ -25,15 +9,17 @@ NUM_IMAGES = GRID_WIDTH * GRID_HEIGHT
 CHOICES_CSV_FILENAME = "data/in/human-choices/images.csv"
 
 
-def create_window() -> sg.Window:
-    # TODO: left sidebar will need a button per scientific name in input file
+def create_window(plants: list[str]) -> sg.Window:
+    longest_name = max([len(plant) for plant in plants])
     left_sidebar = [
         [
             sg.Button(
-                f"Left Sidebar {n}", font=("Helvetica", 12, "bold"), key=f"-SIDEBAR-{n}"
+                plant,
+                size=(longest_name, 1),
+                key=f"-SIDEBAR-{idx}",
             )
         ]
-        for n in range(1, 10)
+        for idx, plant in enumerate(plants)
     ]
 
     # create a button for each potential image, these will be toggled to visible
@@ -93,8 +79,18 @@ def create_window() -> sg.Window:
     ]
 
     return sg.Window(
-        "Image Picker v2", layout, resizable=True, size=(1200, 800), finalize=True
+        "Image Picker v2",
+        layout,
+        resizable=True,
+        size=(1200, 800),
+        finalize=True,
+        font=("Helvetia", 16),
     )
+
+
+def get_plants(filename: str) -> list[str]:
+    with open(filename, "r") as f:
+        return f.read().splitlines()
 
 
 def select_plant(scientific_name: str):
@@ -105,27 +101,40 @@ def select_image(scientific_name: str, image: dict):
     pass
 
 
-window = create_window()
+def main(filename: str):
+    plants = get_plants(filename)
 
-while True:
-    event, values = window.read()  # type: ignore
-    if event == sg.WIN_CLOSED:
-        break
+    window = create_window(plants)
 
-    if event.startswith("-SIDEBAR-"):
-        item_id = int(event.split("-")[2])
+    print(sg.tkinter.font.families())
+    while True:
+        event, values = window.read()  # type: ignore
+        if event == sg.WIN_CLOSED:
+            break
 
-        info_area = window["-INFO-AREA-"]
-        if info_area is not None:
-            info_area.update(visible=False)
-            window["-COMMON-NAME-"].update(value=f"common name {item_id}")  # type: ignore
-            window["-SCIENTIFIC-NAME-"].update(value=f"Scientific Name {item_id}")  # type: ignore
-            info_area.update(visible=True)
+        if event.startswith("-SIDEBAR-"):
+            item_id = int(event.split("-")[2])
 
-        images_for_area = item_id * 3 + 5
-        for n in range(0, NUM_IMAGES):
-            image = window[f"-IMAGE-{n}"]
-            if image is not None:
-                image.update(visible=n < images_for_area)
+            info_area = window["-INFO-AREA-"]
+            if info_area is not None:
+                info_area.update(visible=False)
+                window["-COMMON-NAME-"].update(value=f"common name {item_id}")  # type: ignore
+                window["-SCIENTIFIC-NAME-"].update(value=f"Scientific Name {item_id}")  # type: ignore
+                info_area.update(visible=True)
 
-window.close()
+            images_for_area = item_id * 3 + 5
+            for n in range(0, NUM_IMAGES):
+                image = window[f"-IMAGE-{n}"]
+                if image is not None:
+                    image.update(visible=n < images_for_area)
+
+    window.close()
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print(f"Usage: uv run {sys.argv[0]} plant_list_filename")
+        exit(1)
+
+    filename = sys.argv[1]
+    main(filename)

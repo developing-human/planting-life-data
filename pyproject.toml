@@ -3,7 +3,7 @@ name = "planting-life-data"
 version = "0.1.0"
 description = "Organizes data around native plants, exporting csv and sql."
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.13"
 dependencies = [
     # helps parse html
     "beautifulsoup4==4.12",
@@ -41,5 +41,7 @@ filterwarnings = [
 venvPath = "."
 venv = ".venv"
 
+[tool.uv]
+python-preference = "only-system"
 
 
