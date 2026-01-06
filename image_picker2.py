@@ -11,7 +11,7 @@ from operator import itemgetter
 import FreeSimpleGUI as sg
 import luigi
 import requests
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from tasks.datasources.flickr import TransformPrioritizedFlickrImages
 from tasks.datasources.inaturalist import TransformValidINaturalistImages
@@ -274,6 +274,17 @@ def load_image(url: str) -> Image.Image | None:
 
     # Resize the image
     cropped.thumbnail((IMG_SIZE, IMG_SIZE))
+
+    source_label = None
+    if "flickr" in url:
+        source_label = "flickr"
+    elif "inaturalist" in url:
+        source_label = "inaturalist"
+
+    if source_label:
+        draw = ImageDraw.Draw(cropped)
+        draw.text((6, IMG_SIZE - 30), source_label, (0, 0, 0), font_size=24)
+        draw.text((5, IMG_SIZE - 31), source_label, (255, 255, 255), font_size=24)
 
     return cropped
 
