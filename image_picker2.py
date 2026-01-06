@@ -90,11 +90,13 @@ class ImagePickerWindow(sg.Window):
                     # when they have an image to show, but otherwise will stay invisible.
                     [
                         [
-                            sg.Button(
-                                f"Img {row * GRID_WIDTH + col + 1}",
-                                key=f"-IMAGE-{row * GRID_WIDTH + col}",
-                                visible=False,
-                                image_size=(IMG_SIZE, IMG_SIZE),
+                            sg.pin(
+                                sg.Button(
+                                    f"Img {row * GRID_WIDTH + col + 1}",
+                                    key=f"-IMAGE-{row * GRID_WIDTH + col}",
+                                    visible=False,
+                                    image_size=(IMG_SIZE, IMG_SIZE),
+                                )
                             )
                             for col in range(GRID_WIDTH)
                         ]
@@ -294,11 +296,11 @@ def load_images_from_urls(
 ) -> typing.Generator[tuple[int, Image.Image]]:
     with ThreadPoolExecutor() as executor:
         futures_to_idx = {
-            executor.submit(load_image, url): idx for idx, url in enumerate(urls)
+            executor.submit(load_image, url): (idx, url) for idx, url in enumerate(urls)
         }
 
         for future in as_completed(futures_to_idx):
-            idx = futures_to_idx[future]
+            idx, url = futures_to_idx[future]
             try:
                 image = future.result()
                 if image is not None:
