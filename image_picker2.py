@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from io import BytesIO
 from itertools import zip_longest
+from operator import itemgetter
 
 import FreeSimpleGUI as sg
 import luigi
@@ -58,6 +59,7 @@ class Plant:
 class ImagePickerWindow(sg.Window):
     plants: list[Plant]
     current_plant_index: int
+    current_images: list[dict]
 
     def __init__(self, plants: list[Plant]):
         longest_name = max([plant.max_len() for plant in plants])
@@ -294,6 +296,45 @@ def load_images_from_urls(
                 print(f"could not load: {idx} due to {exc}")
 
 
+def save_choice(scientific_name: str, choice: dict):
+    fields = [
+        "scientific_name",
+        "title",
+        "author",
+        "license",
+        "original_url",
+        "card_url",
+    ]
+
+    # Read the existing csv, choices is list of dicts
+    with open(CHOICES_CSV_FILENAME, "r", newline="") as csvfile:
+        reader = csv.DictReader(csvfile)
+        choices = list(reader)
+
+    # Convert choice into expected row format
+    row_to_save = {key: choice[key] for key in choice if key in fields}
+
+    scientific_name = scientific_name.capitalize()
+    row_to_save["scientific_name"] = scientific_name
+
+    existing_row = next(
+        (row for row in choices if row.get("scientific_name") == scientific_name), None
+    )
+
+    if existing_row:
+        existing_row.update(row_to_save)
+    else:
+        choices.append(row_to_save)
+
+    # Keep this file sorted for sanity's sake
+    choices.sort(key=itemgetter("scientific_name"))
+
+    with open(CHOICES_CSV_FILENAME, "w", newline="") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(choices)
+
+
 # called when a plant is selected, populates the info & image panes
 def select_plant(window: ImagePickerWindow, plant_index: int):
     # deselect previous button
@@ -315,8 +356,8 @@ def select_plant(window: ImagePickerWindow, plant_index: int):
         gui_image: sg.Button = window[f"-IMAGE-{idx}"]  # type: ignore
         gui_image.update(visible=False)
 
-    choices = load_choices_for_plant(plant.scientific_name)
-    urls = [choice["card_url"] for choice in choices]
+    window.current_images = load_choices_for_plant(plant.scientific_name)
+    urls = [choice["card_url"] for choice in window.current_images]
 
     for idx, image in load_images_from_urls(urls[:NUM_IMAGES]):
         gui_image: sg.Button = window[f"-IMAGE-{idx}"]  # type: ignore
@@ -333,10 +374,8 @@ def select_plant(window: ImagePickerWindow, plant_index: int):
 
 # called when an image is selected, saves the result
 def select_image(window: ImagePickerWindow, image_idx: int):
-    # TODO: save selection
-    print(
-        f"TODO: save selection of {image_idx} for {window.current_plant().scientific_name}"
-    )
+    selected_image = window.current_images[image_idx]
+    save_choice(window.current_plant().scientific_name, selected_image)
 
     if window.current_plant_index == len(window.plants) - 1:
         print("No choices left to make, enjoy your day!")
@@ -378,7 +417,6 @@ def main(filename: str):
             select_plant(window, item_id)
         elif event.startswith("-IMAGE-"):
             image_id = int(event.split("-")[2])
-            # TODO: how do I get the image choices without pulling them again? return from select_plant?
             select_image(window, image_id)
 
     window.close()
