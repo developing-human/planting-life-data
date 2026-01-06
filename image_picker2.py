@@ -1,7 +1,8 @@
 import csv
 import json
 import sys
-from concurrent.futures import ThreadPoolExecutor
+import typing
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from io import BytesIO
 from itertools import zip_longest
@@ -235,6 +236,7 @@ def load_image(url: str) -> Image.Image | None:
     response: requests.Response = requests.get(url)
 
     if response.status_code != 200:
+        print(f"could not fetch image for {url}, status code: {response.status_code}")
         return None
 
     img = Image.open(BytesIO(response.content))
@@ -274,9 +276,22 @@ def load_image(url: str) -> Image.Image | None:
     return cropped
 
 
-def load_images_from_urls(urls: list[str]) -> list[Image.Image | None]:
+def load_images_from_urls(
+    urls: list[str],
+) -> typing.Generator[tuple[int, Image.Image]]:
     with ThreadPoolExecutor() as executor:
-        return list(executor.map(load_image, urls))
+        futures_to_idx = {
+            executor.submit(load_image, url): idx for idx, url in enumerate(urls)
+        }
+
+        for future in as_completed(futures_to_idx):
+            idx = futures_to_idx[future]
+            try:
+                image = future.result()
+                if image is not None:
+                    yield (idx, image)
+            except Exception as exc:
+                print(f"could not load: {idx} due to {exc}")
 
 
 # called when a plant is selected, populates the info & image panes
@@ -295,26 +310,25 @@ def select_plant(window: ImagePickerWindow, plant_index: int):
 
     plant = window.current_plant()
 
-    choices = load_choices_for_plant(plant.scientific_name)
-    urls = [choice["card_url"] for choice in choices]
-    image_choices = load_images_from_urls(urls[:10])
-
+    # hide all images for the previous plant
     for idx in range(0, NUM_IMAGES):
         gui_image: sg.Button = window[f"-IMAGE-{idx}"]  # type: ignore
+        gui_image.update(visible=False)
 
-        if idx >= len(image_choices):
-            gui_image.update(image_data=None, visible=False)
-            continue
+    choices = load_choices_for_plant(plant.scientific_name)
+    urls = [choice["card_url"] for choice in choices]
 
-        image = image_choices[idx]
+    for idx, image in load_images_from_urls(urls[:NUM_IMAGES]):
+        gui_image: sg.Button = window[f"-IMAGE-{idx}"]  # type: ignore
+
         if gui_image is not None and image is not None:
             bio = BytesIO()
             image.save(bio, format="PNG")
             gui_image.update(image_data=bio.getvalue(), visible=True)
 
-    image_area: sg.Column = window["-IMAGE-AREA-"]  # type: ignore
-    image_area.contents_changed()
-    window.refresh()
+            image_area: sg.Column = window["-IMAGE-AREA-"]  # type: ignore
+            image_area.contents_changed()
+            window.refresh()
 
 
 # called when an image is selected, saves the result
