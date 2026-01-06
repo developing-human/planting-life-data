@@ -30,6 +30,7 @@ class Plant:
     scientific_name: str
     common_name: str | None
     habit: str | None
+    # images: list[dict] = []
 
     def to_str(self) -> str:
         result = self.scientific_name
@@ -52,83 +53,70 @@ class Plant:
         return max(lens)
 
 
-def create_window(plants: list[Plant]) -> sg.Window:
-    longest_name = max([plant.max_len() for plant in plants])
-    left_sidebar = [
-        [
-            sg.Button(
-                plant.to_str(),
-                size=(longest_name, 3),
-                key=f"-SIDEBAR-{idx}",
-            )
+# Defines the layout of the Window and tracks context needed to run the application.
+class ImagePickerWindow(sg.Window):
+    plants: list[Plant]
+    current_plant_index: int
+
+    def __init__(self, plants: list[Plant]):
+        longest_name = max([plant.max_len() for plant in plants])
+        layout = [
+            [
+                # left sidebar, for selecting which plant to show
+                sg.Column(
+                    [
+                        [
+                            sg.Button(
+                                plant.to_str(),
+                                size=(longest_name, 3),
+                                key=f"-SIDEBAR-{idx}",
+                            )
+                        ]
+                        for idx, plant in enumerate(plants)
+                    ],
+                    size=(None, 2000),
+                    scrollable=True,
+                    vertical_scroll_only=True,
+                ),
+                # image grid displays images to choose from
+                sg.Column(
+                    # create a button for each potential image, these will be toggled to visible
+                    # when they have an image to show, but otherwise will stay invisible.
+                    [
+                        [
+                            sg.Button(
+                                f"Img {row * GRID_WIDTH + col + 1}",
+                                key=f"-IMAGE-{row * GRID_WIDTH + col}",
+                                visible=False,
+                                image_size=(IMG_SIZE, IMG_SIZE),
+                            )
+                            for col in range(GRID_WIDTH)
+                        ]
+                        for row in range(GRID_HEIGHT)
+                    ],
+                    expand_y=True,
+                    expand_x=True,
+                    scrollable=True,
+                    vertical_scroll_only=True,
+                    key="-IMAGE-AREA-",
+                ),
+            ]
         ]
-        for idx, plant in enumerate(plants)
-    ]
 
-    # create a button for each potential image, these will be toggled to visible
-    # when they have an image to show, but otherwise will stay invisible.
-    image_grid = [
-        [
-            sg.Button(
-                f"Img {row * GRID_WIDTH + col + 1}",
-                key=f"-IMAGE-{row * GRID_WIDTH + col}",
-                visible=False,
-                image_size=(IMG_SIZE, IMG_SIZE),
-            )
-            for col in range(GRID_WIDTH)
-        ]
-        for row in range(GRID_HEIGHT)
-    ]
+        self.plants = plants
+        self.current_plant_index = 0
 
-    right_column = [
-        # [
-        #     sg.Column(
-        #         [
-        #             [sg.Text("Common Name:"), sg.Text("", key="-COMMON-NAME-")],
-        #             [
-        #                 sg.Text("Scientific Name:"),
-        #                 sg.Text("", key="-SCIENTIFIC-NAME-"),
-        #             ],
-        #             [sg.Text("Habit:"), sg.Text("", key="-HABIT-")],
-        #         ],
-        #         size=(None, 300),
-        #         expand_x=True,
-        #         key="-INFO-AREA-",
-        #     )
-        # ],
-        [
-            sg.Column(
-                image_grid,
-                expand_y=True,
-                expand_x=True,
-                scrollable=True,
-                vertical_scroll_only=True,
-                key="-IMAGE-AREA-",
-            )
-        ],
-    ]
-    layout = [
-        [
-            sg.Column(
-                left_sidebar,
-                size=(None, 2000),
-                scrollable=True,
-                vertical_scroll_only=True,
-            ),
-            sg.Column(right_column, expand_y=True, expand_x=True),
-        ]
-    ]
+        super().__init__(
+            "Image Picker v2",
+            layout,
+            resizable=True,
+            size=(1200, 800),
+            finalize=True,
+            font=("Helvetia", 16),
+        )
 
-    print("making window")
-
-    return sg.Window(
-        "Image Picker v2",
-        layout,
-        resizable=True,
-        size=(1200, 800),
-        finalize=True,
-        font=("Helvetia", 16),
-    )
+    def current_plant(self) -> Plant:
+        return self.plants[self.current_plant_index]
 
 
 def get_plants(filename_or_scientific_name: str) -> list[Plant]:
@@ -289,29 +277,19 @@ def load_images_from_urls(urls: list[str]) -> list[Image.Image | None]:
 
 
 # called when a plant is selected, populates the info & image panes
-def select_plant(window: sg.Window, plant: Plant, plant_index: int):
-    # common_name = get_common_name(scientific_name)
-    # habit = get_habit(scientific_name)
-    # info_area: sg.Column = window["-INFO-AREA-"]  # type: ignore
-    # if info_area is not None:
-    #     info_area.update(visible=False)
-    #     window["-COMMON-NAME-"].update(value=common_name)  # type: ignore
-    #     window["-SCIENTIFIC-NAME-"].update(value=scientific_name)  # type: ignore
-    #     window["-HABIT-"].update(value=habit)  # type: ignore
-    #     info_area.update(visible=True)
-    #
-    # info_area.contents_changed()
-    # window.refresh()
-    global current_index, current_scientific_name
-
-    previous_button: sg.Button = window[f"-SIDEBAR-{current_index}"]  # type:ignore
+def select_plant(window: ImagePickerWindow, plant_index: int):
+    # deselect previous button
+    previous_button: sg.Button = window[f"-SIDEBAR-{window.current_plant_index}"]  # type:ignore
     previous_button.update(button_color=sg.DEFAULT_BUTTON_COLOR)
 
+    # update the current plant
+    window.current_plant_index = plant_index
+
+    # select the new button
     current_button: sg.Button = window[f"-SIDEBAR-{plant_index}"]  # type:ignore
     current_button.update(button_color="black")
 
-    current_index = plant_index
-    current_scientific_name = plant.scientific_name
+    plant = window.current_plant()
 
     choices = load_choices_for_plant(plant.scientific_name)
     urls = [choice["card_url"] for choice in choices]
@@ -336,7 +314,11 @@ def select_plant(window: sg.Window, plant: Plant, plant_index: int):
 
 
 # called when an image is selected, saves the result
-def select_image(window: sg.Window, scientific_name: str, image: dict):
+def select_image(window: ImagePickerWindow, image_idx: int):
+    # TODO: save selection
+    #       hide current button
+
+    #       select next plant (detect when done?)
     pass
 
 
@@ -346,10 +328,10 @@ def main(filename: str):
         print("No choices left to make, enjoy your day!")
         exit(0)
 
-    window = create_window(plants)
+    window = ImagePickerWindow(plants)
 
     # start with the first plant selected
-    select_plant(window, plants[0], 0)
+    select_plant(window, 0)
 
     while True:
         event, values = window.read()  # type: ignore
@@ -358,8 +340,11 @@ def main(filename: str):
 
         if event.startswith("-SIDEBAR-"):
             item_id = int(event.split("-")[2])
-            scientific_name = plants[item_id]
-            select_plant(window, scientific_name, item_id)
+            select_plant(window, item_id)
+        elif event.startswith("-IMAGE-"):
+            image_id = int(event.split("-")[2])
+            # TODO: how do I get the image choices without pulling them again? return from select_plant?
+            select_image(window, image_id)
 
     window.close()
 
