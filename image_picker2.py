@@ -151,7 +151,7 @@ def get_plants(filename_or_scientific_name: str) -> list[Plant]:
             get_common_name(scientific_name),
             get_habit(scientific_name),
         )
-        for scientific_name in scientific_names[:10]
+        for scientific_name in scientific_names
     ]
 
     print("got plants")
