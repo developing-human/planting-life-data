@@ -66,10 +66,13 @@ class ImagePickerWindow(sg.Window):
                 sg.Column(
                     [
                         [
-                            sg.Button(
-                                plant.to_str(),
-                                size=(longest_name, 3),
-                                key=f"-SIDEBAR-{idx}",
+                            sg.pin(
+                                sg.Button(
+                                    plant.to_str(),
+                                    size=(longest_name, 3),
+                                    key=f"-SIDEBAR-{idx}",
+                                ),
+                                shrink=True,
                             )
                         ]
                         for idx, plant in enumerate(plants)
@@ -288,6 +291,7 @@ def select_plant(window: ImagePickerWindow, plant_index: int):
     # select the new button
     current_button: sg.Button = window[f"-SIDEBAR-{plant_index}"]  # type:ignore
     current_button.update(button_color="black")
+    window.refresh()
 
     plant = window.current_plant()
 
@@ -316,10 +320,27 @@ def select_plant(window: ImagePickerWindow, plant_index: int):
 # called when an image is selected, saves the result
 def select_image(window: ImagePickerWindow, image_idx: int):
     # TODO: save selection
-    #       hide current button
+    print(
+        f"TODO: save selection of {image_idx} for {window.current_plant().scientific_name}"
+    )
 
-    #       select next plant (detect when done?)
-    pass
+    if window.current_plant_index == len(window.plants) - 1:
+        print("No choices left to make, enjoy your day!")
+        exit(0)
+
+    # hide current button
+    current_button: sg.Button = window[f"-SIDEBAR-{window.current_plant_index}"]  # type: ignore
+    current_button.update(visible=False)
+
+    # hide all images
+    for idx in range(0, NUM_IMAGES):
+        gui_image: sg.Button = window[f"-IMAGE-{idx}"]  # type: ignore
+        gui_image.update(visible=False)
+
+    window.refresh()
+
+    # select next plant
+    select_plant(window, window.current_plant_index + 1)
 
 
 def main(filename: str):
