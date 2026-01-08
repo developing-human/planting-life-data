@@ -1,8 +1,14 @@
 import logging
 import os
 import sys
+
 import luigi
-from tasks.tables.images.generate import GenerateImagesSql, GenerateImagesCsv, GenerateImagesWithoutHumanOverridesCsv
+
+from tasks.tables.images.generate import (
+    GenerateImagesCsv,
+    GenerateImagesSql,
+    GenerateImagesWithoutHumanOverridesCsv,
+)
 
 logging.getLogger().setLevel(logging.WARN)
 
@@ -22,12 +28,11 @@ if __name__ == "__main__":
     ]
 
     for task in tasks_to_clear:
-        path = task.output().path
+        path = task.output()[0].path
         if os.path.exists(path):
             os.remove(path)
 
     task = GenerateImagesSql(plants_filename=plants_filename)
-
 
     result = luigi.build(
         [task],

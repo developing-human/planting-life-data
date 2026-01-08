@@ -84,16 +84,16 @@ class GenerateImagesCsv(luigi.Task):
     def output(self):
         filename = os.path.basename(self.plants_filename)
         filename_no_ext = os.path.splitext(filename)[0]
-        return luigi.LocalTarget(f"data/out/images-{filename_no_ext}.csv")
+        return [luigi.LocalTarget(f"data/out/images-{filename_no_ext}.csv")]
 
     def requires(self):
-        return GenerateImagesWithoutHumanOverridesCsv(
-            plants_filename=self.plants_filename
-        )
+        return [
+            GenerateImagesWithoutHumanOverridesCsv(plants_filename=self.plants_filename)
+        ]
 
     def run(self):
         # originals are data that was automatically gathered
-        with self.input().open() as csvfile:
+        with self.input()[0][0].open() as csvfile:
             reader = csv.DictReader(csvfile)
             originals = list(reader)
 
@@ -113,7 +113,7 @@ class GenerateImagesCsv(luigi.Task):
             "card_url",
         ]
 
-        with self.output().open("w") as out:
+        with self.output()[0].open("w") as out:
             csv_out = csv.DictWriter(out, fields)
             csv_out.writeheader()
 
@@ -133,13 +133,13 @@ class GenerateImagesSql(luigi.Task):
     def output(self):
         filename = os.path.basename(self.plants_filename)
         filename_no_ext = os.path.splitext(filename)[0]
-        return luigi.LocalTarget(f"data/out/images-{filename_no_ext}.sql")
+        return [luigi.LocalTarget(f"data/out/images-{filename_no_ext}.sql")]
 
     def requires(self):
-        return GenerateImagesCsv(plants_filename=self.plants_filename)
+        return [GenerateImagesCsv(plants_filename=self.plants_filename)]
 
     def run(self):
-        with self.input().open() as plant_csv, self.output().open("w") as out:
+        with self.input()[0][0].open() as plant_csv, self.output()[0].open("w") as out:
             reader = csv.DictReader(plant_csv)
 
             def sanitize(s: str) -> str:
