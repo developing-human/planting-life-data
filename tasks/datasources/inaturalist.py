@@ -113,7 +113,7 @@ class TransformValidINaturalistImages(luigi.Task):
             return None
 
         return {
-            "author": user.get("name", user.get("login")),
+            "author": user.get("name") or user.get("login"),
             "views": faves,  # close enough :)
             # iNaturalist doesn't really do titles/descriptions
             "title": self.scientific_name,
