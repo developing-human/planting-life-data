@@ -4,8 +4,19 @@ import os
 import dotenv
 import luigi
 import mysql.connector
+from mysql.connector.abstracts import MySQLConnectionAbstract
+from mysql.connector.pooling import PooledMySQLConnection
 
 from tasks.lenient import LenientTask
+
+
+def get_db_connection() -> PooledMySQLConnection | MySQLConnectionAbstract:
+    return mysql.connector.connect(
+        host="127.0.0.1",
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database="planting_life",
+    )
 
 
 class ExtractPlantIds(LenientTask):
@@ -22,19 +33,75 @@ class ExtractPlantIds(LenientTask):
 
     def run_lenient(self):
         dotenv.load_dotenv()
-        print("extract from wildflower (api call)")
 
-        conn = mysql.connector.connect(
-            host="127.0.0.1",
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            database="planting_life",
-        )
-
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("select id, scientific_name from plants")
 
-        scientific_name_to_id = {name.lower(): id for (id, name) in cursor}  # type: ignore
+        scientific_name_to_id = {name.lower(): int(id) for (id, name) in cursor}  # type: ignore
 
         with self.output()[0].open("w") as f:
             f.write(json.dumps(scientific_name_to_id, indent=2))
+
+
+class TransformSpecificPlantIds(LenientTask):
+    """Given a list of scientific names, finds or creates ids for them."""
+
+    plants_filename: str = luigi.Parameter()  # type: ignore
+
+    def requires(self):
+        return [ExtractPlantIds()]
+
+    def output(self):
+        return [luigi.LocalTarget("data/transformed/plantinglife/plant_ids.json")]
+
+    def run_lenient(self):
+        with open(self.plants_filename) as plant_file:
+            scientific_names = plant_file.read().splitlines()
+
+        with self.input()[0][0].open() as all_plant_ids_json:
+            existing_name_to_id: dict[str, int] = json.loads(all_plant_ids_json.read())
+
+            result = {
+                "existing_name_to_id": {},
+                "new_name_to_id": {},
+            }
+
+            next_generated_id = max(existing_name_to_id.values()) + 1
+            for scientific_name in scientific_names:
+                existing_id = existing_name_to_id.get(scientific_name, None)
+                if existing_id is not None:
+                    result["existing_name_to_id"][scientific_name] = existing_id
+                else:
+                    result["new_name_to_id"][scientific_name] = next_generated_id
+                    next_generated_id += 1
+
+        print(result)
+        with self.output()[0].open("w") as f:
+            f.write(json.dumps(result, indent=2))
+
+
+class ExtractZipcodesPlants(LenientTask):
+    """Extracts the zipcodes_plants join table into a json file."""
+
+    def output(self):
+        return [
+            luigi.LocalTarget("data/raw/plantinglife/plants_zipcodes.json"),
+        ]
+
+    def run_lenient(self):
+        dotenv.load_dotenv()
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("select plant_id, zipcode from zipcodes_plants")
+
+        plant_id_to_zipcodes = {}
+        for plant_id, zipcode in cursor:  # type: ignore
+            if plant_id not in plant_id_to_zipcodes:
+                plant_id_to_zipcodes[plant_id] = [zipcode]
+            else:
+                plant_id_to_zipcodes[plant_id].append(zipcode)
+
+        with self.output()[0].open("w") as f:
+            f.write(json.dumps(plant_id_to_zipcodes))
