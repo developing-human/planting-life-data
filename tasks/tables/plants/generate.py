@@ -7,12 +7,13 @@ import luigi
 import tasks.datasources.chatgpt as chatgpt
 import tasks.datasources.usda.usda as usda
 import tasks.datasources.wildflower as wildflower
+from tasks.datasources.plantinglife import TransformSpecificPlantIds
 
 
 class GeneratePlantsCsv(luigi.Task):
     plants_filename: str = luigi.Parameter()  # type: ignore
 
-    def output(self):
+    def output(self):  # type: ignore
         filename = os.path.basename(self.plants_filename)
         filename_no_ext = os.path.splitext(filename)[0]
         return luigi.LocalTarget(f"data/out/plants-{filename_no_ext}.csv")
@@ -96,17 +97,26 @@ class GeneratePlantsCsv(luigi.Task):
 class GeneratePlantsSql(luigi.Task):
     plants_filename: str = luigi.Parameter()  # type: ignore
 
-    def output(self):
+    def output(self):  # type: ignore
         filename = os.path.basename(self.plants_filename)
         filename_no_ext = os.path.splitext(filename)[0]
         return luigi.LocalTarget(f"data/out/plants-{filename_no_ext}.sql")
 
     def requires(self):
-        return GeneratePlantsCsv(plants_filename=self.plants_filename)
+        return [
+            GeneratePlantsCsv(plants_filename=self.plants_filename),
+            TransformSpecificPlantIds(plants_filename=self.plants_filename),
+        ]
 
     def run(self):
-        with self.input().open() as plant_csv, self.output().open("w") as out:
+        with (
+            self.input()[0].open() as plant_csv,
+            self.input()[1][0].open() as id_json,
+            self.output().open("w") as out,
+        ):  # type: ignore
             reader = csv.DictReader(plant_csv)
+            ids = json.loads(id_json.read())
+            new_name_to_id = ids["new_name_to_id"]
 
             def to_conditions_str(
                 row: dict, none_field: str, some_field: str, lots_field: str
@@ -129,15 +139,21 @@ class GeneratePlantsSql(luigi.Task):
                     row, "low_moisture", "medium_moisture", "high_moisture"
                 )
                 scientific_name = row["scientific_name"]
+                common_name = row["common_name"].replace("'", "''")
 
                 # height & width may have ' in them, so escape them
                 height = row["height"].replace("'", "''")
                 width = row["width"].replace("'", "''")
 
-                sql = (
-                    "UPDATE plants \n"
-                    + f"SET shades = '{shades_str}',\n"
+                is_new_plant = scientific_name.lower() in new_name_to_id
+
+                # TODO: Update usda_source, wiki_source
+
+                setters_sql = (
+                    f"SET shades = '{shades_str}',\n"
                     + f"    moistures = '{moistures_str}',\n"
+                    + f"    scientific_name = '{scientific_name}',\n"
+                    + f"    common_name = '{common_name}',\n"
                     + f"    height = '{height}',\n"
                     + f"    spread = '{width}',\n"
                     + f"    bloom = '{row['bloom']}',\n"
@@ -145,20 +161,34 @@ class GeneratePlantsSql(luigi.Task):
                     + f"    pollinator_rating = {row['pollinator_rating']},\n"
                     + f"    bird_rating = {row['bird_rating']},\n"
                     + f"    spread_rating = {row['spread_rating']},\n"
-                    + f"    deer_resistance_rating = {row['deer_resistance_rating']}\n"  # no comma at end
-                    + f"WHERE scientific_name = '{scientific_name}';"
+                    + f"    deer_resistance_rating = {row['deer_resistance_rating']}"  # no comma at end
                 )
-                out.write(sql + "\n")
+                if is_new_plant:
+                    sql = (
+                        "INSERT INTO plants \n"
+                        + setters_sql
+                        + f",\n    id = {new_name_to_id[scientific_name.lower()]};"
+                    )
+                else:
+                    # TODO: Only generate update clause if it was updated. This makes diffs easier to review.
+                    #       Ideally only update changed fields too.
+                    #       For that, I need a full copy of the plants table.
+                    sql = (
+                        "UPDATE plants \n"
+                        + setters_sql
+                        + f"\nWHERE scientific_name = '{scientific_name}';"
+                    )
+                out.write(sql + "\n\n")
 
 
 class AggregateFieldTask(luigi.Task):
-    def run(self):
+    def run(self):  # type: ignore
         for task in self.get_prioritized_tasks():
             yield task
 
-            output = task.output().open("r").read()
+            output = task.output().open("r").read()  # type: ignore
             if output.strip():
-                with self.output().open("w") as f:
+                with self.output().open("w") as f:  # type: ignore
                     f.write(output)
                     break
 
@@ -171,7 +201,7 @@ class AggregateFieldTask(luigi.Task):
 class AggregateShade(AggregateFieldTask):
     scientific_name: str = luigi.Parameter()  # type: ignore
 
-    def output(self):
+    def output(self):  # type: ignore
         return luigi.LocalTarget(f"data/aggregated/shade/{self.scientific_name}.json")
 
     def get_prioritized_tasks(self) -> list[luigi.Task]:
@@ -184,7 +214,7 @@ class AggregateShade(AggregateFieldTask):
 class AggregateMoisture(AggregateFieldTask):
     scientific_name: str = luigi.Parameter()  # type: ignore
 
-    def output(self):
+    def output(self):  # type: ignore
         return luigi.LocalTarget(
             f"data/aggregated/moisture/{self.scientific_name}.json"
         )

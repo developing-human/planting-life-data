@@ -45,7 +45,18 @@ class ExtractPlantIds(LenientTask):
 
 
 class TransformSpecificPlantIds(LenientTask):
-    """Given a list of scientific names, finds or creates ids for them."""
+    """Given a list of scientific names, finds or creates ids for them.
+
+    To differentiate existing vs new plants, outputs JSON like:
+    {
+        "existing_name_to_id": {
+            "foo": 123
+        },
+        "new_name_to_id": {
+            "bar": 321
+        }
+    }
+    """
 
     plants_filename: str = luigi.Parameter()  # type: ignore
 
@@ -53,7 +64,13 @@ class TransformSpecificPlantIds(LenientTask):
         return [ExtractPlantIds()]
 
     def output(self):
-        return [luigi.LocalTarget("data/transformed/plantinglife/plant_ids.json")]
+        filename = os.path.basename(self.plants_filename)
+        filename_no_ext = os.path.splitext(filename)[0]
+        return [
+            luigi.LocalTarget(
+                f"data/transformed/plantinglife/plant-ids-{filename_no_ext}.json"
+            )
+        ]
 
     def run_lenient(self):
         with open(self.plants_filename) as plant_file:

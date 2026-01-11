@@ -33,7 +33,7 @@ class ExtractWildflowerHtml(LenientTask):
     def run_lenient(self):
         print("extract from wildflower (api call)")
 
-        with self.input().open() as f:
+        with self.input()[0].open() as f:
             symbol = f.read().strip()
 
         # Fetch HTML from wildflower
