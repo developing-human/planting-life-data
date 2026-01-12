@@ -122,3 +122,48 @@ class ExtractZipcodesPlants(LenientTask):
 
         with self.output()[0].open("w") as f:
             f.write(json.dumps(plant_id_to_zipcodes))
+
+
+class ExtractImages(LenientTask):
+    """Extracts the images table into a json file which maps scientific name to image."""
+
+    def output(self):
+        return [
+            luigi.LocalTarget("data/raw/plantinglife/images.json"),
+        ]
+
+    def run_lenient(self):
+        dotenv.load_dotenv()
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT plants.scientific_name, plants.id as plant_id, images.id as id, title, card_url, original_url, author, license "
+            + "FROM images "
+            + "INNER JOIN plants ON plants.image_id = images.id"
+        )
+
+        name_to_image = {}
+
+        for (
+            scientific_name,
+            plant_id,
+            id,
+            title,
+            card_url,
+            original_url,
+            author,
+            license,
+        ) in cursor:  # type: ignore
+            name_to_image[scientific_name] = {
+                "plant_id": plant_id,
+                "id": id,
+                "title": title,
+                "card_url": card_url,
+                "original_url": original_url,
+                "author": author,
+                "license": license,
+            }
+
+        with self.output()[0].open("w") as f:
+            f.write(json.dumps(name_to_image, indent=2))

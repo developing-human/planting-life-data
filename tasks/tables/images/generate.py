@@ -7,6 +7,7 @@ import luigi
 
 import tasks.datasources.flickr as flickr
 import tasks.datasources.inaturalist as inaturalist
+from tasks.datasources.plantinglife import ExtractImages
 
 
 class GenerateImagesWithoutHumanOverridesCsv(luigi.Task):
@@ -136,11 +137,23 @@ class GenerateImagesSql(luigi.Task):
         return [luigi.LocalTarget(f"data/out/images-{filename_no_ext}.sql")]
 
     def requires(self):
-        return [GenerateImagesCsv(plants_filename=self.plants_filename)]
+        return [
+            GenerateImagesCsv(plants_filename=self.plants_filename),
+            ExtractImages(),
+        ]
 
     def run(self):
-        with self.input()[0][0].open() as plant_csv, self.output()[0].open("w") as out:
+        with (
+            self.input()[0][0].open() as plant_csv,
+            self.input()[1][0].open() as name_to_image_json,
+            self.output()[0].open("w") as out,
+        ):
             reader = csv.DictReader(plant_csv)
+            name_to_image = json.loads(name_to_image_json.read())
+
+            next_generated_id = (
+                max([image["id"] for image in name_to_image.values()]) + 1
+            )
 
             def sanitize(s: str) -> str:
                 s = s.replace("'", "''")
@@ -149,28 +162,34 @@ class GenerateImagesSql(luigi.Task):
 
             for row in reader:
                 scientific_name = row["scientific_name"]
+                image = name_to_image.get(scientific_name, None)
                 title = sanitize(row["title"])
                 author = sanitize(row["author"])
 
                 if len(title) > 190:
                     title = title[:190] + "..."
 
-                select_image_id_sql = (
-                    "SELECT image_id "
-                    + "FROM plants "
-                    + f"WHERE scientific_name = '{scientific_name}'"
-                )
-
-                # TODO: This SQL will update existing images, but not insert new ones
-                #       I think once I flip the relationship so images point to plants
-                #       I'll be able to issue deletes/inserts easier.
-                sql = (
-                    "UPDATE images \n"
-                    + f"SET title = '{title}',\n"
+                setters_sql = (
+                    f"SET title = '{title}',\n"
                     + f"    author = '{author}',\n"
                     + f"    license = '{row['license']}',\n"
                     + f"    original_url = '{row['original_url']}',\n"
-                    + f"    card_url = '{row['card_url']}'\n"
-                    + f"WHERE id = ({select_image_id_sql});"
+                    + f"    card_url = '{row['card_url']}'"
                 )
-                out.write(sql + "\n")
+
+                if image is None:
+                    # an image doesn't exist, so create it and point the plant at it
+                    # TODO: This section can simplify if images stores plant_id, instead of plants storing image_id
+                    out.write(
+                        f"INSERT INTO images \n{setters_sql},\n    id={next_generated_id};\n"
+                    )
+
+                    out.write(
+                        f"UPDATE plants SET image_id = {next_generated_id} WHERE id = (SELECT id FROM plants where scientific_name = '{scientific_name}');\n\n"
+                    )
+                    next_generated_id += 1
+                else:
+                    # the image already exists, so just update it
+                    out.write(
+                        f"UPDATE images \n{setters_sql}\nWHERE id = {image['id']};\n\n"
+                    )
