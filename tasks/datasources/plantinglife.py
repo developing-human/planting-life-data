@@ -93,7 +93,6 @@ class TransformSpecificPlantIds(LenientTask):
                     result["new_name_to_id"][scientific_name] = next_generated_id
                     next_generated_id += 1
 
-        print(result)
         with self.output()[0].open("w") as f:
             f.write(json.dumps(result, indent=2))
 

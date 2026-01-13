@@ -14,10 +14,10 @@ from tasks.datasources.plantinglife import ExtractPlants, TransformSpecificPlant
 class GeneratePlantsCsv(luigi.Task):
     plants_filename: str = luigi.Parameter()  # type: ignore
 
-    def output(self):  # type: ignore
+    def output(self):
         filename = os.path.basename(self.plants_filename)
         filename_no_ext = os.path.splitext(filename)[0]
-        return luigi.LocalTarget(f"data/out/plants-{filename_no_ext}.csv")
+        return [luigi.LocalTarget(f"data/out/plants-{filename_no_ext}.csv")]
 
     def run(self):
         with open(self.plants_filename) as plant_file:
@@ -47,7 +47,7 @@ class GeneratePlantsCsv(luigi.Task):
             "habit_source",
             "habit_source_detail",
         ]
-        with self.output().open("w") as out:
+        with self.output()[0].open("w") as out:
             csv_out = csv.DictWriter(out, fields)
             csv_out.writeheader()
 
@@ -116,10 +116,10 @@ PLANT_DB_FIELDS = [
 class GeneratePlantsSql(luigi.Task):
     plants_filename: str = luigi.Parameter()  # type: ignore
 
-    def output(self):  # type: ignore
+    def output(self):
         filename = os.path.basename(self.plants_filename)
         filename_no_ext = os.path.splitext(filename)[0]
-        return luigi.LocalTarget(f"data/out/plants-{filename_no_ext}.sql")
+        return [luigi.LocalTarget(f"data/out/plants-{filename_no_ext}.sql")]
 
     def requires(self):
         return [
@@ -183,10 +183,10 @@ class GeneratePlantsSql(luigi.Task):
 
     def run(self):
         with (
-            self.input()[0].open() as plant_csv,
+            self.input()[0][0].open() as plant_csv,
             self.input()[1][0].open() as id_json,
             self.input()[2][0].open() as all_plants_json,
-            self.output().open("w") as out,
+            self.output()[0].open("w") as out,
         ):  # type: ignore
             reader = csv.DictReader(plant_csv)
             ids = json.loads(id_json.read())
