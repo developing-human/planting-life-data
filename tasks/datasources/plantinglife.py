@@ -167,3 +167,61 @@ class ExtractImages(LenientTask):
 
         with self.output()[0].open("w") as f:
             f.write(json.dumps(name_to_image, indent=2))
+
+
+class ExtractPlants(luigi.Task):
+    """Extracts the plants table into a json file which maps id to plant."""
+
+    def output(self):
+        return [
+            luigi.LocalTarget("data/raw/plantinglife/plants.json"),
+        ]
+
+    def run(self):
+        dotenv.load_dotenv()
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, scientific_name, common_name, bloom, pollinator_rating, "
+            + "bird_rating, usda_source, wiki_source, height, spread, spread_rating, "
+            + "deer_resistance_rating, moistures, shades "
+            + "FROM plants"
+        )
+
+        id_to_plant = {}
+
+        for (
+            id,
+            scientific_name,
+            common_name,
+            bloom,
+            pollinator_rating,
+            bird_rating,
+            usda_source,
+            wiki_source,
+            height,
+            spread,
+            spread_rating,
+            deer_resistance,
+            moistures,
+            shades,
+        ) in cursor:  # type: ignore
+            id_to_plant[id] = {
+                "scientific_name": scientific_name,
+                "common_name": common_name,
+                "bloom": bloom,
+                "pollinator_rating": pollinator_rating,
+                "bird_rating": bird_rating,
+                "usda_source": usda_source,
+                "wiki_source": wiki_source,
+                "height": height,
+                "spread": spread,
+                "spread_rating": spread_rating,
+                "deer_resistance": deer_resistance,
+                "moistures": list(moistures),
+                "shades": list(shades),
+            }
+
+        with self.output()[0].open("w") as f:
+            f.write(json.dumps(id_to_plant, indent=2))
