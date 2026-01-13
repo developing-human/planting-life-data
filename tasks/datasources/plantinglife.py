@@ -170,7 +170,7 @@ class ExtractImages(LenientTask):
 
 
 class ExtractPlants(luigi.Task):
-    """Extracts the plants table into a json file which maps id to plant."""
+    """Extracts the plants table into a json file which maps lowercase scientific name to plant."""
 
     def output(self):
         return [
@@ -189,7 +189,7 @@ class ExtractPlants(luigi.Task):
             + "FROM plants"
         )
 
-        id_to_plant = {}
+        name_to_plant = {}
 
         for (
             id,
@@ -207,8 +207,8 @@ class ExtractPlants(luigi.Task):
             moistures,
             shades,
         ) in cursor:  # type: ignore
-            id_to_plant[id] = {
-                "scientific_name": scientific_name,
+            name_to_plant[scientific_name.lower()] = {
+                "id": id,
                 "common_name": common_name,
                 "bloom": bloom,
                 "pollinator_rating": pollinator_rating,
@@ -224,4 +224,4 @@ class ExtractPlants(luigi.Task):
             }
 
         with self.output()[0].open("w") as f:
-            f.write(json.dumps(id_to_plant, indent=2))
+            f.write(json.dumps(name_to_plant, indent=2))
