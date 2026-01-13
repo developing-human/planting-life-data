@@ -1,13 +1,14 @@
 import csv
 import json
 import os
+from typing import Any
 
 import luigi
 
 import tasks.datasources.chatgpt as chatgpt
 import tasks.datasources.usda.usda as usda
 import tasks.datasources.wildflower as wildflower
-from tasks.datasources.plantinglife import TransformSpecificPlantIds
+from tasks.datasources.plantinglife import ExtractPlants, TransformSpecificPlantIds
 
 
 class GeneratePlantsCsv(luigi.Task):
@@ -94,6 +95,24 @@ class GeneratePlantsCsv(luigi.Task):
                 csv_out.writerow(row_out)
 
 
+PLANT_DB_FIELDS = [
+    "id",
+    "scientific_name",
+    "common_name",
+    "bloom",
+    "pollinator_rating",
+    "bird_rating",
+    "usda_source",
+    "wiki_source",
+    "height",
+    "spread",
+    "spread_rating",
+    "deer_resistance_rating",
+    "moistures",
+    "shades",
+]
+
+
 class GeneratePlantsSql(luigi.Task):
     plants_filename: str = luigi.Parameter()  # type: ignore
 
@@ -106,79 +125,120 @@ class GeneratePlantsSql(luigi.Task):
         return [
             GeneratePlantsCsv(plants_filename=self.plants_filename),
             TransformSpecificPlantIds(plants_filename=self.plants_filename),
+            ExtractPlants(),
         ]
+
+    @staticmethod
+    def get_updated_fields(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
+        updated_fields = {}
+        for field_name, new_value in new.items():
+            if field_name not in PLANT_DB_FIELDS:
+                continue
+
+            old_value = old[field_name]
+
+            if isinstance(old_value, list) and isinstance(new_value, list):
+                old_value = old_value.sort()
+                new_value = new_value.sort()
+
+            if str(old_value) != str(new_value):
+                updated_fields[field_name] = new_value
+
+        return updated_fields
+
+    @staticmethod
+    def to_sql_setters(fields: dict[str, Any]) -> str:
+        sql = "SET"
+        spaces = "   "
+        for field_name, value in fields.items():
+            if isinstance(value, str):
+                escaped = value.replace("'", "''")
+                value_str = f"'{escaped}'"
+            elif isinstance(value, int):
+                value_str = f"{value}"
+            elif isinstance(value, list):
+                value_str = "'" + ", ".join(value) + "'"
+            else:
+                raise ValueError(f"unexpected type for {field_name}: {type(value)}")
+            sql += f"{spaces}{field_name} = {value_str},\n"
+
+            # just being particular about formatting...
+            spaces = "      "
+
+        return sql.rstrip(",\n ")
+
+    @staticmethod
+    def to_conditions(
+        plant: dict, none_field: str, some_field: str, lots_field: str
+    ) -> list[str]:
+        conditions = []
+        if plant.pop(none_field) == "yes":
+            conditions.append("None")
+        if plant.pop(some_field) == "yes":
+            conditions.append("Some")
+        if plant.pop(lots_field) == "yes":
+            conditions.append("Lots")
+
+        return conditions
 
     def run(self):
         with (
             self.input()[0].open() as plant_csv,
             self.input()[1][0].open() as id_json,
+            self.input()[2][0].open() as all_plants_json,
             self.output().open("w") as out,
         ):  # type: ignore
             reader = csv.DictReader(plant_csv)
             ids = json.loads(id_json.read())
+            all_names_to_plant = json.loads(all_plants_json.read())
             new_name_to_id = ids["new_name_to_id"]
 
-            def to_conditions_str(
-                row: dict, none_field: str, some_field: str, lots_field: str
-            ) -> str:
-                conditions = []
-                if row[none_field] == "yes":
-                    conditions.append("None")
-                if row[some_field] == "yes":
-                    conditions.append("Some")
-                if row[lots_field] == "yes":
-                    conditions.append("Lots")
-
-                return ",".join(conditions)
-
+            # TODO: Update usda_source, wiki_source
+            #       To do this, I need to be able to construct & verify the urls work
             for row in reader:
-                shades_str = to_conditions_str(
-                    row, "full_sun", "part_shade", "full_shade"
+                updated_plant = dict(row)
+                updated_plant["shades"] = self.to_conditions(
+                    updated_plant, "full_sun", "part_shade", "full_shade"
                 )
-                moistures_str = to_conditions_str(
-                    row, "low_moisture", "medium_moisture", "high_moisture"
+                updated_plant["moistures"] = self.to_conditions(
+                    updated_plant, "low_moisture", "medium_moisture", "high_moisture"
                 )
+
+                # TODO: These names aren't always consistent...
+                updated_plant["spread"] = updated_plant.pop("width")
+
+                updated_plant = {
+                    key: value
+                    for key, value in updated_plant.items()
+                    if key in PLANT_DB_FIELDS
+                }
+
                 scientific_name = row["scientific_name"]
-                common_name = row["common_name"].replace("'", "''")
+                existing_plant = all_names_to_plant.get(scientific_name.lower(), None)
 
-                # height & width may have ' in them, so escape them
-                height = row["height"].replace("'", "''")
-                width = row["width"].replace("'", "''")
-
-                is_new_plant = scientific_name.lower() in new_name_to_id
-
-                # TODO: Update usda_source, wiki_source
-
-                setters_sql = (
-                    f"SET shades = '{shades_str}',\n"
-                    + f"    moistures = '{moistures_str}',\n"
-                    + f"    scientific_name = '{scientific_name}',\n"
-                    + f"    common_name = '{common_name}',\n"
-                    + f"    height = '{height}',\n"
-                    + f"    spread = '{width}',\n"
-                    + f"    bloom = '{row['bloom']}',\n"
-                    # since its subtle... I removed the quotes on these numeric fields
-                    + f"    pollinator_rating = {row['pollinator_rating']},\n"
-                    + f"    bird_rating = {row['bird_rating']},\n"
-                    + f"    spread_rating = {row['spread_rating']},\n"
-                    + f"    deer_resistance_rating = {row['deer_resistance_rating']}"  # no comma at end
-                )
-                if is_new_plant:
-                    sql = (
-                        "INSERT INTO plants \n"
-                        + setters_sql
-                        + f",\n    id = {new_name_to_id[scientific_name.lower()]};"
+                if existing_plant is None:
+                    out.write(
+                        (
+                            "INSERT INTO plants \n"
+                            + self.to_sql_setters(updated_plant)
+                            + f",\n    id = {new_name_to_id[scientific_name.lower()]};\n\n"
+                        )
                     )
                 else:
-                    # TODO: Only generate update clause if it was updated. This makes diffs easier to review.
-                    #       Ideally only update changed fields too.
-                    #       For that, I need a full copy of the plants table.
-                    sql = (
-                        "UPDATE plants \n"
-                        + setters_sql
-                        + f"\nWHERE scientific_name = '{scientific_name}';"
+                    existing_plant["scientific_name"] = scientific_name
+                    updated_fields = self.get_updated_fields(
+                        existing_plant, updated_plant
                     )
-                out.write(sql + "\n\n")
+                    if updated_fields:
+                        out.write(
+                            (
+                                "UPDATE plants \n"
+                                + self.to_sql_setters(updated_fields)
+                                + f"\nWHERE scientific_name = '{scientific_name}';\n\n"
+                            )
+                        )
+
+            # TODO: Consider deleting a plant if we're processing all.txt and it isn't in the list.
 
 
 class AggregateFieldTask(luigi.Task):

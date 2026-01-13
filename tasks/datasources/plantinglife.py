@@ -218,7 +218,7 @@ class ExtractPlants(luigi.Task):
                 "height": height,
                 "spread": spread,
                 "spread_rating": spread_rating,
-                "deer_resistance": deer_resistance,
+                "deer_resistance_rating": deer_resistance,
                 "moistures": list(moistures),
                 "shades": list(shades),
             }
