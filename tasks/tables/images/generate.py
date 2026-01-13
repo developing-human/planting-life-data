@@ -1,6 +1,8 @@
 import csv
 import json
 import os
+from time import sleep
+from typing import Any
 
 import emoji
 import luigi
@@ -48,9 +50,11 @@ class GenerateImagesWithoutHumanOverridesCsv(luigi.Task):
                 # will use both as options.
                 tasks = [
                     flickr.TransformBestFlickrImage(scientific_name),
-                    inaturalist.TransformBestINaturalistImage(scientific_name),
+                    # inaturalist.TransformBestINaturalistImage(scientific_name),
                 ]
 
+                # TODO: Consider moving this up into a `requires`.
+                #       I had to increase file descriptor limit with `ulimit -n 2048` for this to run.
                 luigi.build(
                     tasks,
                     workers=len(tasks),
@@ -68,6 +72,8 @@ class GenerateImagesWithoutHumanOverridesCsv(luigi.Task):
                             parsed = json.loads(json_str)
 
                             row_out.update(parsed)
+
+                del tasks
 
                 # the flickr image will have a few fields that shouldn't appear
                 # in the csv, so filter the row to just the expected fields
@@ -128,6 +134,9 @@ class GenerateImagesCsv(luigi.Task):
                     csv_out.writerow(original)
 
 
+IMAGE_DB_FIELDS = ["id", "title", "card_url", "original_url", "author", "license"]
+
+
 class GenerateImagesSql(luigi.Task):
     plants_filename: str = luigi.Parameter()  # type: ignore
 
@@ -142,6 +151,49 @@ class GenerateImagesSql(luigi.Task):
             ExtractImages(),
         ]
 
+    @staticmethod
+    def get_updated_fields(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
+        updated_fields = {}
+        for field_name, new_value in new.items():
+            if field_name not in IMAGE_DB_FIELDS:
+                continue
+
+            # this sanitization exists just to make the existing values diff nicely
+            # but this sanitization doesn't stick, because the 'new plant' path also
+            # needs sanitization without calling this function.
+            new_value_sanitized = new_value
+            new_value_sanitized = new_value.replace("'", "''")
+            new_value_sanitized = emoji.replace_emoji(new_value_sanitized, "")
+
+            old_value = old[field_name].replace("'", "''")
+            if field_name == "title" and len(new_value_sanitized) > 190:
+                new_value_sanitized = new_value_sanitized[:190] + "..."
+
+            if old_value != new_value_sanitized:
+                updated_fields[field_name] = new_value
+
+        return updated_fields
+
+    @staticmethod
+    def to_sql_setters(fields: dict[str, Any]) -> str:
+        sql = "SET"
+        spaces = "   "
+        for field_name, value in fields.items():
+            if field_name not in IMAGE_DB_FIELDS:
+                continue
+
+            escaped = value.replace("'", "''")
+            sanitized = emoji.replace_emoji(escaped, "")
+            if field_name == "title" and len(sanitized) > 190:
+                sanitized = sanitized[:190] + "..."
+
+            sql += f"{spaces}{field_name} = '{sanitized}',\n"
+
+            # just being particular about formatting...
+            spaces = "      "
+
+        return sql.rstrip(",\n ")
+
     def run(self):
         with (
             self.input()[0][0].open() as plant_csv,
@@ -155,33 +207,18 @@ class GenerateImagesSql(luigi.Task):
                 max([image["id"] for image in name_to_image.values()]) + 1
             )
 
-            def sanitize(s: str) -> str:
-                s = s.replace("'", "''")
-                s = emoji.replace_emoji(s, "")
-                return s
-
             for row in reader:
-                scientific_name = row["scientific_name"]
-                image = name_to_image.get(scientific_name, None)
-                title = sanitize(row["title"])
-                author = sanitize(row["author"])
+                updated_image = dict(row)
 
-                if len(title) > 190:
-                    title = title[:190] + "..."
+                scientific_name = updated_image["scientific_name"]
+                existing_image = name_to_image.get(scientific_name, None)
 
-                setters_sql = (
-                    f"SET title = '{title}',\n"
-                    + f"    author = '{author}',\n"
-                    + f"    license = '{row['license']}',\n"
-                    + f"    original_url = '{row['original_url']}',\n"
-                    + f"    card_url = '{row['card_url']}'"
-                )
-
-                if image is None:
+                if existing_image is None:
                     # an image doesn't exist, so create it and point the plant at it
+                    #
                     # TODO: This section can simplify if images stores plant_id, instead of plants storing image_id
                     out.write(
-                        f"INSERT INTO images \n{setters_sql},\n    id={next_generated_id};\n"
+                        f"INSERT INTO images \n{self.to_sql_setters(updated_image)},\n      id={next_generated_id};\n"
                     )
 
                     out.write(
@@ -189,7 +226,12 @@ class GenerateImagesSql(luigi.Task):
                     )
                     next_generated_id += 1
                 else:
-                    # the image already exists, so just update it
-                    out.write(
-                        f"UPDATE images \n{setters_sql}\nWHERE id = {image['id']};\n\n"
+                    updated_fields = self.get_updated_fields(
+                        existing_image, updated_image
                     )
+
+                    if updated_fields:
+                        # the image already exists and has updated fields, so update it
+                        out.write(
+                            f"UPDATE images \n{self.to_sql_setters(updated_fields)}\nWHERE id = {existing_image['id']};\n\n"
+                        )
