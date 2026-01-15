@@ -205,8 +205,16 @@ class GeneratePlantsSql(luigi.Task):
         if not habits or habits == [""]:
             return []
 
-        habits = [habit.capitalize() for habit in habits.split(",")]
-        return habits
+        sanitized_habits = []
+        for habit in habits.split(","):
+            if habit == "flower-or-herb":
+                habit = "FlowerOrHerb"
+            else:
+                habit = habit.capitalize()
+
+            sanitized_habits.append(habit)
+
+        return sanitized_habits
 
     def run(self):
         with (

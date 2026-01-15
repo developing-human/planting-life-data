@@ -253,7 +253,7 @@ class TransformHabit(luigi.Task):
         for habit in usda_habits:
             match habit:
                 case "Forb/herb":
-                    pl_habits.add("garden")
+                    pl_habits.add("flower-or-herb")
                 case "Subshrub":
                     pl_habits.add("shrub")
                 case "Shrub":
@@ -265,9 +265,12 @@ class TransformHabit(luigi.Task):
                 case "Vine":
                     pl_habits.add("vine")
                 case _:
-                    pl_habits.add("garden")
+                    pl_habits.add("flower-or-herb")
 
-        return list(pl_habits)
+        pl_habits = list(pl_habits)
+        pl_habits.sort()
+
+        return pl_habits
 
 
 class TransformPlantId(luigi.Task):
