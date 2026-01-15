@@ -50,7 +50,7 @@ class GenerateImagesWithoutHumanOverridesCsv(luigi.Task):
                 # will use both as options.
                 tasks = [
                     flickr.TransformBestFlickrImage(scientific_name),
-                    # inaturalist.TransformBestINaturalistImage(scientific_name),
+                    inaturalist.TransformBestINaturalistImage(scientific_name),
                 ]
 
                 # TODO: Consider moving this up into a `requires`.
