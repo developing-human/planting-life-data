@@ -147,6 +147,9 @@ class GeneratePlantsSql(luigi.Task):
 
             old_value = old[field_name]
 
+            if new_value == "":
+                new_value = None
+
             if isinstance(old_value, list) and isinstance(new_value, list):
                 old_value = old_value.sort()
                 new_value = new_value.sort()
@@ -168,6 +171,8 @@ class GeneratePlantsSql(luigi.Task):
                 value_str = f"{value}"
             elif isinstance(value, list):
                 value_str = "'" + ",".join(value) + "'"
+            elif value is None:
+                value_str = "null"
             else:
                 raise ValueError(f"unexpected type for {field_name}: {type(value)}")
             sql += f"{spaces}{field_name} = {value_str},\n"
