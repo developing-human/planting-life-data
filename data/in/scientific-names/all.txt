@@ -26,6 +26,8 @@ adiantum capillus-veneris
 adiantum jordanii
 adiantum pedatum
 aesculus californica
+aesculus flava
+aesculus glabra
 aesculus pavia
 agalinis edwardsiana
 agalinis heterophylla
@@ -175,6 +177,8 @@ berberis haematocarpa
 berberis repens
 berberis trifoliolata
 berlandiera lyrata
+betula alleghaniensis
+betula lenta
 betula nigra
 betula occidentalis
 betula papyrifera
@@ -273,11 +277,16 @@ carex woodii
 carnegiea gigantea
 carpenteria californica
 carpinus caroliniana
+carya cordiformis
 carya glabra
 carya illinoinensis
+carya laciniosa
 carya ovata
+carya tomentosa
+castanea dentata
 castilleja linariifolia
 castilleja miniata
+catalpa speciosa
 ceanothus americanus
 ceanothus crassifolius
 ceanothus fendleri
@@ -380,6 +389,7 @@ cornus nuttallii
 cornus racemosa
 cornus sericea
 corydalis sempervirens
+corylus americana
 costus speciosus
 crinum americanum
 crotalaria rotundifolia
@@ -611,6 +621,7 @@ guaiacum officinale
 gutierrezia microcephala
 gutierrezia sarothrae
 gymnocarpium dryopteris
+gymnocladus dioicus
 hamamelis virginiana
 hamelia patens
 hedyotis terminalis
@@ -830,6 +841,7 @@ lysichiton americanus
 lysimachia ciliata
 lysimachia terrestris
 machaerina angustifolia
+magnolia acuminata
 magnolia grandiflora
 magnolia virginiana
 mahonia aquifolium
@@ -1095,6 +1107,7 @@ populus angustifolia
 populus balsamifera
 populus deltoides
 populus fremontii
+populus grandidentata
 populus mexicana
 populus tremuloides
 populus trichocarpa
@@ -1153,7 +1166,9 @@ pycnanthemum virginianum
 quercus agrifolia
 quercus alba
 quercus berberidifolia
+quercus bicolor
 quercus chrysolepis
+quercus coccinea
 quercus douglasii
 quercus emoryi
 quercus falcata
