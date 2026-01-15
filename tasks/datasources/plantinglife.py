@@ -184,7 +184,7 @@ class ExtractPlants(luigi.Task):
         cursor.execute(
             "SELECT id, scientific_name, common_name, bloom, pollinator_rating, "
             + "bird_rating, usda_source, wiki_source, height, spread, spread_rating, "
-            + "deer_resistance_rating, moistures, shades "
+            + "deer_resistance_rating, moistures, shades, habits "
             + "FROM plants"
         )
 
@@ -205,6 +205,7 @@ class ExtractPlants(luigi.Task):
             deer_resistance,
             moistures,
             shades,
+            habits,
         ) in cursor:  # type: ignore
             name_to_plant[scientific_name.lower()] = {
                 "id": id,
@@ -220,6 +221,7 @@ class ExtractPlants(luigi.Task):
                 "deer_resistance_rating": deer_resistance,
                 "moistures": list(moistures),
                 "shades": list(shades),
+                "habits": list(habits) if habits else [],
             }
 
         with self.output()[0].open("w") as f:

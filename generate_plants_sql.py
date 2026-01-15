@@ -1,8 +1,11 @@
 import logging
-import luigi
 import os
 import sys
-from tasks.tables.plants.generate import GeneratePlantsSql, GeneratePlantsCsv
+
+import luigi
+
+from tasks.datasources.plantinglife import ExtractPlants
+from tasks.tables.plants.generate import GeneratePlantsCsv, GeneratePlantsSql
 
 logging.getLogger().setLevel(logging.WARN)
 
@@ -18,10 +21,11 @@ if __name__ == "__main__":
     tasks_to_clear = [
         GeneratePlantsCsv(plants_filename=plants_filename),
         GeneratePlantsSql(plants_filename=plants_filename),
+        ExtractPlants(),
     ]
 
     for task in tasks_to_clear:
-        path = task.output().path
+        path = task.output()[0].path
         if os.path.exists(path):
             os.remove(path)
 

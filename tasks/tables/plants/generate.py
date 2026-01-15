@@ -36,7 +36,7 @@ class GeneratePlantsCsv(luigi.Task):
             "bloom",
             "height",
             "width",
-            "habit",
+            "habits",
             "pollinator_rating",
             "bird_rating",
             "spread_rating",
@@ -99,6 +99,8 @@ class GeneratePlantsCsv(luigi.Task):
                                     parsed[k] = "yes"
                                 elif v is False:
                                     parsed[k] = "no"
+                                elif isinstance(v, list):
+                                    parsed[k] = ",".join(v)
 
                             row_out.update(parsed)
 
@@ -120,6 +122,7 @@ PLANT_DB_FIELDS = [
     "deer_resistance_rating",
     "moistures",
     "shades",
+    "habits",
 ]
 
 
@@ -151,8 +154,8 @@ class GeneratePlantsSql(luigi.Task):
                 new_value = None
 
             if isinstance(old_value, list) and isinstance(new_value, list):
-                old_value = old_value.sort()
-                new_value = new_value.sort()
+                old_value.sort()
+                new_value.sort()
 
             if str(old_value) != str(new_value):
                 updated_fields[field_name] = new_value
@@ -196,6 +199,15 @@ class GeneratePlantsSql(luigi.Task):
 
         return conditions
 
+    @staticmethod
+    def to_habits(plant: dict) -> list[str]:
+        habits = plant.get("habits", [])
+        if not habits or habits == [""]:
+            return []
+
+        habits = [habit.capitalize() for habit in habits.split(",")]
+        return habits
+
     def run(self):
         with (
             self.input()[0][0].open() as plant_csv,
@@ -216,6 +228,7 @@ class GeneratePlantsSql(luigi.Task):
                 updated_plant["moistures"] = self.to_conditions(
                     updated_plant, "low_moisture", "medium_moisture", "high_moisture"
                 )
+                updated_plant["habits"] = self.to_habits(updated_plant)
 
                 # TODO: These names aren't always consistent...
                 updated_plant["spread"] = updated_plant.pop("width")

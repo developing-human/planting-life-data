@@ -6,8 +6,6 @@ import time
 import luigi
 import requests
 
-from tasks.lenient import LenientTask
-
 SOURCE_NAME = "USDA"
 
 
@@ -238,10 +236,10 @@ class TransformHabit(luigi.Task):
             data = json.load(content)
             usda_habits: list[str] = data["GrowthHabits"]
 
-            habit = TransformHabit.transform_usda_habits(usda_habits)
+            habits = TransformHabit.transform_usda_habits(usda_habits)
 
             result = {
-                "habit": habit,
+                "habits": habits,
                 "habit_source": SOURCE_NAME,
                 "habit_source_detail": source_detail.read(),
             }
@@ -250,25 +248,26 @@ class TransformHabit(luigi.Task):
                 f.write(json.dumps(result))
 
     @staticmethod
-    def transform_usda_habits(usda_habits: list[str]) -> str:
-        # usda may report multiple of:
-        # Forb/herb, Graminoid, Shrub, Subshrub, Tree
-        #
-        # Shrub+Tree tends to be what I'd think of as a shrub.
-        # Forb/herb tends to be what I'd call "garden"
-        # Sooo... prioritize the smallest?
-        if "Forb/herb" in usda_habits:
-            return "garden"
-        elif "Subshrub" in usda_habits:
-            return "garden"
-        elif "Shrub" in usda_habits:
-            return "shrub"
-        elif "Tree" in usda_habits:
-            return "tree"
-        elif "Graminoid" in usda_habits:
-            return "grass"
-        else:
-            return "garden"
+    def transform_usda_habits(usda_habits: list[str]) -> list[str]:
+        pl_habits = set()
+        for habit in usda_habits:
+            match habit:
+                case "Forb/herb":
+                    pl_habits.add("garden")
+                case "Subshrub":
+                    pl_habits.add("shrub")
+                case "Shrub":
+                    pl_habits.add("shrub")
+                case "Tree":
+                    pl_habits.add("tree")
+                case "Graminoid":
+                    pl_habits.add("grass")
+                case "Vine":
+                    pl_habits.add("vine")
+                case _:
+                    pl_habits.add("garden")
+
+        return list(pl_habits)
 
 
 class TransformPlantId(luigi.Task):

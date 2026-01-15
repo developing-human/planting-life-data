@@ -1,7 +1,9 @@
 import logging
 import os
 import sys
+
 import luigi
+
 from tasks.tables.plants.generate import GeneratePlantsCsv
 
 logging.getLogger().setLevel(logging.WARN)
@@ -15,7 +17,7 @@ if __name__ == "__main__":
 
     # Remove output file before generating
     # Always want fresh results when using script
-    path = task.output().path
+    path = task.output()[0].path
     if os.path.exists(path):
         os.remove(path)
 
