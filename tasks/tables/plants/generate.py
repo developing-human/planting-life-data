@@ -8,6 +8,7 @@ import luigi
 import tasks.datasources.chatgpt as chatgpt
 import tasks.datasources.usda.usda as usda
 import tasks.datasources.wildflower as wildflower
+from tasks.datasources import wikipedia
 from tasks.datasources.plantinglife import ExtractPlants, TransformSpecificPlantIds
 
 
@@ -46,6 +47,8 @@ class GeneratePlantsCsv(luigi.Task):
             "shade_source_detail",
             "habit_source",
             "habit_source_detail",
+            "usda_source",
+            "wiki_source",
         ]
         with self.output()[0].open("w") as out:
             csv_out = csv.DictWriter(out, fields)
@@ -68,6 +71,8 @@ class GeneratePlantsCsv(luigi.Task):
                     chatgpt.TransformSpreadRating(scientific_name),
                     chatgpt.TransformDeerResistanceRating(scientific_name),
                     usda.TransformHabit(scientific_name),
+                    usda.TransformSourceUrl(scientific_name),
+                    wikipedia.TransformSourceUrl(scientific_name),
                 ]
 
                 luigi.build(
@@ -78,7 +83,12 @@ class GeneratePlantsCsv(luigi.Task):
 
                 row_out = {"scientific_name": scientific_name.capitalize()}
                 for task in tasks:
-                    with task.output().open() as f:
+                    # some of the tasks have a single item as output, some have a list of one to be more type friendly
+                    output = task.output()
+                    if isinstance(output, list):
+                        output = output[0]
+
+                    with output.open() as f:
                         json_str = f.read().strip()
                         if json_str:
                             parsed = json.loads(json_str)
@@ -157,7 +167,7 @@ class GeneratePlantsSql(luigi.Task):
             elif isinstance(value, int):
                 value_str = f"{value}"
             elif isinstance(value, list):
-                value_str = "'" + ", ".join(value) + "'"
+                value_str = "'" + ",".join(value) + "'"
             else:
                 raise ValueError(f"unexpected type for {field_name}: {type(value)}")
             sql += f"{spaces}{field_name} = {value_str},\n"
@@ -193,8 +203,6 @@ class GeneratePlantsSql(luigi.Task):
             all_names_to_plant = json.loads(all_plants_json.read())
             new_name_to_id = ids["new_name_to_id"]
 
-            # TODO: Update usda_source, wiki_source
-            #       To do this, I need to be able to construct & verify the urls work
             for row in reader:
                 updated_plant = dict(row)
                 updated_plant["shades"] = self.to_conditions(

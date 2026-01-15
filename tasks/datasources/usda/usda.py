@@ -6,6 +6,8 @@ import time
 import luigi
 import requests
 
+from tasks.lenient import LenientTask
+
 SOURCE_NAME = "USDA"
 
 
@@ -291,3 +293,33 @@ class TransformPlantId(luigi.Task):
 
             with self.output().open("w") as f:
                 f.write(json.dumps(id))
+
+
+class TransformSourceUrl(luigi.Task):
+    """Finds a link to USDA's page about a plant.
+
+    Input: scientific name of plant (genus + species)
+    Output: A JSON object with:
+        "usda_source": a link to USDA's page for this plant
+    """
+
+    task_namespace = "usda"  # allows tasks of same name in diff packages
+
+    scientific_name: str = luigi.Parameter()  # type: ignore
+
+    def requires(self):
+        return [TransformSymbol(scientific_name=self.scientific_name)]
+
+    def output(self):
+        return [
+            luigi.LocalTarget(f"data/transformed/usda/url/{self.scientific_name}.txt")
+        ]
+
+    def run(self):
+        with self.input()[0].open() as input, self.output()[0].open("w") as out:
+            symbol = input.read()
+            out.write(
+                json.dumps(
+                    {"usda_source": f"https://plants.usda.gov/plant-profile/{symbol}"}
+                )
+            )
