@@ -221,6 +221,8 @@ class TransformHabit(luigi.Task):
         "habit": the habit of this plant (tree, shrub, grass, garden)
     """
 
+    task_namespace = "usda"
+
     scientific_name: str = luigi.Parameter()  # type: ignore
 
     def requires(self):  # type: ignore

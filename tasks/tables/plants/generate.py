@@ -8,7 +8,7 @@ import luigi
 import tasks.datasources.chatgpt as chatgpt
 import tasks.datasources.usda.usda as usda
 import tasks.datasources.wildflower as wildflower
-from tasks.datasources import wikipedia
+from tasks.datasources import plantinglife, wikipedia
 from tasks.datasources.plantinglife import ExtractPlants, TransformSpecificPlantIds
 
 
@@ -70,7 +70,7 @@ class GeneratePlantsCsv(luigi.Task):
                     chatgpt.TransformBirdRating(scientific_name),
                     chatgpt.TransformSpreadRating(scientific_name),
                     chatgpt.TransformDeerResistanceRating(scientific_name),
-                    usda.TransformHabit(scientific_name),
+                    plantinglife.TransformHabit(scientific_name),
                     usda.TransformSourceUrl(scientific_name),
                     wikipedia.TransformSourceUrl(scientific_name),
                 ]

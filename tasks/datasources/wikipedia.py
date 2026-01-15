@@ -14,6 +14,8 @@ class TransformSourceUrl(LenientTask):
         "wiki_source": a link to Wikipedia's page for this plant
     """
 
+    task_namespace = "wikipedia"  # allows tasks of same name in diff packages
+
     scientific_name: str = luigi.Parameter()  # type: ignore
 
     def output(self):

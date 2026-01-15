@@ -1,5 +1,7 @@
 import json
 import os
+import re
+from dataclasses import dataclass
 
 import dotenv
 import luigi
@@ -7,6 +9,8 @@ import mysql.connector
 from mysql.connector.abstracts import MySQLConnectionAbstract
 from mysql.connector.pooling import PooledMySQLConnection
 
+from tasks.datasources import chatgpt
+from tasks.datasources.usda import usda
 from tasks.lenient import LenientTask
 
 
@@ -226,3 +230,93 @@ class ExtractPlants(luigi.Task):
 
         with self.output()[0].open("w") as f:
             f.write(json.dumps(name_to_plant, indent=2))
+
+
+@dataclass
+class Measurement:
+    value: int
+    unit: str
+
+    def __init__(self, s: str):
+        match = re.fullmatch(r"(\d+)\s*(\D+)", s)
+        if not match:
+            raise ValueError(f"Invalid Measurement format: {s!r}")
+
+        self.value = int(match.group(1))
+        self.unit = match.group(2)
+
+
+@dataclass
+class MeasurementRange:
+    min: Measurement
+    max: Measurement
+
+    def __init__(self, s: str):
+        split = s.split("-")
+        self.min = Measurement(split[0].strip())
+        self.max = Measurement(split[1].strip())
+
+
+class TransformHabit(luigi.Task):
+    """Determines a plant's habits, by making a few adjustments to USDA's classification. USDA's
+    classifications don't match a layman's view of tree vs shrub, so this reclassifies a few
+    based on height.
+
+    Input: scientific name of plant (genus + species)
+    Output: A JSON object with:
+        "habits": the habit of this plant (tree, shrub, grass, etc)
+    """
+
+    task_namespace = "plantinglife"
+
+    scientific_name: str = luigi.Parameter()  # type: ignore
+
+    def requires(self):
+        return [
+            usda.TransformHabit(scientific_name=self.scientific_name),
+            chatgpt.TransformHeight(scientific_name=self.scientific_name),
+        ]
+
+    def output(self):
+        return [
+            luigi.LocalTarget(
+                f"data/transformed/plantinglife/habits/{self.scientific_name}.json"
+            )
+        ]
+
+    def run(self):
+        with (
+            self.input()[0].open() as usda_habits_json,
+            self.input()[1].open() as chatgpt_height_json,
+        ):
+            usda_habits_object = json.load(usda_habits_json)
+            pl_habits: list[str] = usda_habits_object["habits"]
+
+            habit_source = usda_habits_object["habit_source"]
+            habit_source_detail = usda_habits_object["habit_source_detail"]
+
+            if "tree" in pl_habits and "shrub" in pl_habits:
+                chatgpt_height_object = json.load(chatgpt_height_json)
+                height = chatgpt_height_object["height"]
+
+                height_range = MeasurementRange(height)
+
+                # to roughly match a layman's view of tree vs shrub...
+                # a tree must be fairly tall and a shrub can't be too tall
+                if height_range.min.value <= 8 and height_range.min.unit == "'":
+                    pl_habits.remove("tree")
+                    habit_source = "USDA, adjusted"
+                    habit_source_detail += ", removed tree"
+                elif height_range.max.value >= 35 and height_range.max.unit == "'":
+                    pl_habits.remove("shrub")
+                    habit_source = "USDA, adjusted"
+                    habit_source_detail += ", removed shrub"
+
+            result = {
+                "habits": pl_habits,
+                "habit_source": habit_source,
+                "habit_source_detail": habit_source_detail,
+            }
+
+            with self.output()[0].open("w") as f:
+                f.write(json.dumps(result))
