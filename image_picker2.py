@@ -194,7 +194,7 @@ def get_habit(scientific_name: str) -> str | None:
         return None
 
     json_result = json.loads(output)
-    return json_result["habit"]
+    return ",".join(json_result["habits"])
 
 
 def load_choices_for_plant(scientific_name: str) -> list[dict]:
