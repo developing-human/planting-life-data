@@ -186,9 +186,9 @@ class ExtractPlants(luigi.Task):
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT id, scientific_name, common_name, bloom, pollinator_rating, "
-            + "bird_rating, usda_source, wiki_source, height, spread, spread_rating, "
-            + "deer_resistance_rating, moistures, shades, habits "
+            "SELECT id, scientific_name, common_name, bloom, pollinator_rating, bird_rating, "
+            + "usda_source, wiki_source, wildflower_source, "
+            + "height, spread, spread_rating, deer_resistance_rating, moistures, shades, habits "
             + "FROM plants"
         )
 
@@ -203,6 +203,7 @@ class ExtractPlants(luigi.Task):
             bird_rating,
             usda_source,
             wiki_source,
+            wildflower_source,
             height,
             spread,
             spread_rating,
@@ -219,6 +220,7 @@ class ExtractPlants(luigi.Task):
                 "bird_rating": bird_rating,
                 "usda_source": usda_source,
                 "wiki_source": wiki_source,
+                "wildflower_source": wildflower_source,
                 "height": height,
                 "spread": spread,
                 "spread_rating": spread_rating,

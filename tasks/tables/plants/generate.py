@@ -49,6 +49,7 @@ class GeneratePlantsCsv(luigi.Task):
             "habit_source_detail",
             "usda_source",
             "wiki_source",
+            "wildflower_source",
         ]
         with self.output()[0].open("w") as out:
             csv_out = csv.DictWriter(out, fields)
@@ -73,6 +74,7 @@ class GeneratePlantsCsv(luigi.Task):
                     plantinglife.TransformHabit(scientific_name),
                     usda.TransformSourceUrl(scientific_name),
                     wikipedia.TransformSourceUrl(scientific_name),
+                    wildflower.TransformSourceUrl(scientific_name),
                 ]
 
                 luigi.build(
@@ -116,6 +118,7 @@ PLANT_DB_FIELDS = [
     "bird_rating",
     "usda_source",
     "wiki_source",
+    "wildflower_source",
     "height",
     "spread",
     "spread_rating",

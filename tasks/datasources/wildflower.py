@@ -67,6 +67,34 @@ class ExtractWildflowerHtml(LenientTask):
             f.write(url)
 
 
+class TransformSourceUrl(LenientTask):
+    scientific_name: str = luigi.Parameter()  # type: ignore
+
+    task_namespace = "wildflower"  # allows tasks of same name in diff packages
+
+    def requires(self):
+        return [ExtractWildflowerHtml(scientific_name=self.scientific_name)]
+
+    def output(self):
+        return [
+            luigi.LocalTarget(
+                f"data/transformed/wildflower/url/{self.scientific_name}.json"
+            ),
+        ]
+
+    def run_lenient(self):
+        # reads the url written to ExtractWildflowerHtml's second output
+        with self.input()[0][1].open() as f:
+            maybe_url = f.read().strip()
+
+        # if the url wasn't found, write out an empty string for it
+        if not maybe_url:
+            maybe_url = ""
+
+        with self.output()[0].open("w") as out:
+            out.write(json.dumps({"wildflower_source": maybe_url}))
+
+
 class TransformMoisture(LenientTask):
     """Parses plant moisture preferences out of wildflower.org HTML.
 
